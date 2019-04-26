@@ -56,6 +56,7 @@ along with RandomX.  If not, see<http://www.gnu.org/licenses/>.
 #define REP40(x) REP32(x) REP8(x)
 #define REP64(x) REP32(x) REP32(x)
 #define REP128(x) REP32(x) REP32(x) REP32(x) REP32(x)
+#define REP224(x) REP128(x) REP64(x) REP32(x)
 #define REP232(x) REP128(x) REP40(x) REP40(x) REP24(x)
 #define REP256(x) REP128(x) REP128(x)
 #define REPNX(x,N) REP##N(x)
@@ -98,6 +99,7 @@ along with RandomX.  If not, see<http://www.gnu.org/licenses/>.
 #define REPCASE32(x) REPCASE31(x) case __COUNTER__:
 #define REPCASE64(x) REPCASE32(x) REPCASE32(x)
 #define REPCASE128(x) REPCASE64(x) REPCASE64(x)
+#define REPCASE224(x) REPCASE128(x) REPCASE64(x) REPCASE32(x)
 #define REPCASE256(x) REPCASE128(x) REPCASE128(x)
 #define REPCASENX(x,N) REPCASE##N(x)
 #define REPCASEN(x,N) REPCASENX(x,N)
