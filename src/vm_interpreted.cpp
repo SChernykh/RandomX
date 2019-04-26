@@ -347,7 +347,7 @@ namespace randomx {
 				std::cout << "-----------------------------------" << std::endl;
 			}
 
-			//executeBytecode(r, f, e, a);
+			executeBytecode(r, f, e, a);
 
 			mem.mx ^= r[config.readReg2] ^ r[config.readReg3];
 			mem.mx &= CacheLineAlignMask;
