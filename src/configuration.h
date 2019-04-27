@@ -37,8 +37,11 @@ along with RandomX.  If not, see<http://www.gnu.org/licenses/>.
 #define RANDOMX_SUPERSCALAR_LATENCY   170
 #define RANDOMX_SUPERSCALAR_MAX_SIZE  512
 
-//Dataset size in bytes. Must be a power of 2.
-#define RANDOMX_DATASET_SIZE       (2ULL * 1024 * 1024 * 1024)
+//Dataset base size in bytes. Must be a power of 2.
+#define RANDOMX_DATASET_BASE_SIZE  (2ULL * 1024 * 1024 * 1024)
+
+//Dataset extra size. Must be divisible by 64.
+#define RANDOMX_DATASET_EXTRA_SIZE 33554368
 
 //Number of instructions in a RandomX program
 #define RANDOMX_PROGRAM_SIZE       256
@@ -70,10 +73,8 @@ Total sum of frequencies must be 256
 
 #define RANDOMX_FREQ_IADD_RS       32
 #define RANDOMX_FREQ_IADD_M         7
-#define RANDOMX_FREQ_IADD_RC        0
 #define RANDOMX_FREQ_ISUB_R        17
 #define RANDOMX_FREQ_ISUB_M         7
-#define RANDOMX_FREQ_IMUL_9C        0
 #define RANDOMX_FREQ_IMUL_R        16
 #define RANDOMX_FREQ_IMUL_M         4
 #define RANDOMX_FREQ_IMULH_R        4
@@ -99,7 +100,6 @@ Total sum of frequencies must be 256
 #define RANDOMX_FREQ_FSQRT_R        6
 
 #define RANDOMX_FREQ_COND_R         8
-#define RANDOMX_FREQ_COND_M         0
 #define RANDOMX_FREQ_CFROUND        1
 #define RANDOMX_FREQ_ISTORE        16
 

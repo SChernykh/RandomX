@@ -37,7 +37,7 @@ namespace randomx {
 
 	}
 
-	void JitCompilerX86::generateProgramLight(Program& p, ProgramConfiguration& pcfg) {
+	void JitCompilerX86::generateProgramLight(Program& p, ProgramConfiguration& pcfg, uint32_t datasetOffset) {
 
 	}
 
@@ -217,6 +217,7 @@ namespace randomx {
 	static const uint8_t RET = 0xc3;
 	static const uint8_t LEA_32[] = { 0x67, 0x41, 0x8d };
 	static const uint8_t MOVNTI[] = { 0x4c, 0x0f, 0xc3 };
+	static const uint8_t ADD_EBX_I[] = { 0x81, 0xc3 };
 
 	static const uint8_t NOP1[] = { 0x90 };
 	static const uint8_t NOP2[] = { 0x66, 0x90 };
@@ -250,9 +251,11 @@ namespace randomx {
 		generateProgramEpilogue(prog);
 	}
 
-	void JitCompilerX86::generateProgramLight(Program& prog, ProgramConfiguration& pcfg) {
+	void JitCompilerX86::generateProgramLight(Program& prog, ProgramConfiguration& pcfg, uint32_t datasetOffset) {
 		generateProgramPrologue(prog, pcfg);
 		emit(codeReadDatasetLightSshInit, readDatasetLightInitSize);
+		emit(ADD_EBX_I);
+		emit32(datasetOffset / CacheLineSize);
 		emitByte(CALL);
 		emit32(superScalarHashOffset - (codePos + 4));
 		emit(codeReadDatasetLightSshFin, readDatasetLightFinSize);
@@ -953,10 +956,8 @@ namespace randomx {
 	InstructionGeneratorX86 JitCompilerX86::engine[256] = {
 		INST_HANDLE(IADD_RS)
 		INST_HANDLE(IADD_M)
-		INST_HANDLE(IADD_RC)
 		INST_HANDLE(ISUB_R)
 		INST_HANDLE(ISUB_M)
-		INST_HANDLE(IMUL_9C)
 		INST_HANDLE(IMUL_R)
 		INST_HANDLE(IMUL_M)
 		INST_HANDLE(IMULH_R)
@@ -980,7 +981,6 @@ namespace randomx {
 		INST_HANDLE(FDIV_M)
 		INST_HANDLE(FSQRT_R)
 		INST_HANDLE(COND_R)
-		INST_HANDLE(COND_M)
 		INST_HANDLE(CFROUND)
 		INST_HANDLE(ISTORE)
 		INST_HANDLE(NOP)
