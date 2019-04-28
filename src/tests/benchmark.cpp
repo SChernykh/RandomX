@@ -165,15 +165,13 @@ int main(int argc, char** argv) {
 		Stopwatch sw(true);
 		cache = randomx_alloc_cache(flags);
 		if (cache == nullptr) {
-			std::cout << "ERROR: Cache allocation failed" << std::endl;
-			return 1;
+			throw std::runtime_error("Cache allocation failed");
 		}
 		randomx_init_cache(cache, &seed, sizeof(seed));
 		if (miningMode) {
 			dataset = randomx_alloc_dataset(flags);
 			if (dataset == nullptr) {
-				std::cout << "ERROR: Dataset allocation failed" << std::endl;
-				return 1;
+				throw std::runtime_error("Dataset allocation failed");
 			}
 			uint32_t datasetItemCount = randomx_dataset_item_count();
 			if (initThreadCount > 1) {
@@ -200,8 +198,7 @@ int main(int argc, char** argv) {
 		for (int i = 0; i < threadCount; ++i) {
 			randomx_vm *vm = randomx_create_vm(flags, cache, dataset);
 			if (vm == nullptr) {
-				std::cout << "ERROR: Unsupported virtual machine options" << std::endl;
-				return 1;
+				throw std::runtime_error("Unsupported virtual machine options");
 			}
 			vms.push_back(vm);
 		}
@@ -221,11 +218,18 @@ int main(int argc, char** argv) {
 		else {
 			mine(vms[0], std::ref(atomicNonce), std::ref(result), noncesCount, 0);
 		}
+
 		double elapsed = sw.getElapsed();
+		for (unsigned i = 0; i < vms.size(); ++i)
+			randomx_destroy_vm(vms[i]);
+		if (miningMode)
+			randomx_release_dataset(dataset);
+		else
+			randomx_release_cache(cache);
 		std::cout << "Calculated result: ";
 		result.print(std::cout);
 		if (noncesCount == 1000 && seedValue == 0)
-			std::cout << "Reference result:  918a8bc3ce0e537eec9d3c5e1a8bb3204ae3954f14c50c14810b38e49588a9e0" << std::endl;
+			std::cout << "Reference result:  89336a85bf6d1e83eb20fbc92170705ded9b42285b30178ed8e855d65c4c4b69" << std::endl;
 		if (!miningMode) {
 			std::cout << "Performance: " << 1000 * elapsed / noncesCount << " ms per hash" << std::endl;
 		}
