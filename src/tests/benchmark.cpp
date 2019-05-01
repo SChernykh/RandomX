@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
 
 	if (miningMode) {
 		flags = (randomx_flags)(flags | RANDOMX_FLAG_FULL_MEM);
-		std::cout << " - full memory mode (2 GiB)" << std::endl;
+		std::cout << " - full memory mode (2080 MiB)" << std::endl;
 	}
 	else {
 		std::cout << " - light memory mode (256 MiB)" << std::endl;
@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
 		std::cout << "Calculated result: ";
 		result.print(std::cout);
 		if (noncesCount == 1000 && seedValue == 0)
-			std::cout << "Reference result:  6d95d8d07fa3a80771f33d1b20452b61ab2d0bf21058b5e586fad38bf3e1e0ca" << std::endl;
+			std::cout << "Reference result:  a15448785857f9a78703eb5da235dfe73d0d5fc4c8effaebe73869904f5af47d" << std::endl;
 		if (!miningMode) {
 			std::cout << "Performance: " << 1000 * elapsed / noncesCount << " ms per hash" << std::endl;
 		}
