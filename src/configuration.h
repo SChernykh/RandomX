@@ -34,7 +34,10 @@ along with RandomX.  If not, see<http://www.gnu.org/licenses/>.
 //Number of random Cache accesses per Dataset item. Minimum is 2.
 #define RANDOMX_CACHE_ACCESSES     8
 
+//Target latency for SuperscalarHash (in cycles of the reference CPU).
 #define RANDOMX_SUPERSCALAR_LATENCY   170
+
+//The maximum size of a SuperscalarHash program (number of instructions).
 #define RANDOMX_SUPERSCALAR_MAX_SIZE  512
 
 //Dataset base size in bytes. Must be a power of 2.
@@ -61,55 +64,17 @@ along with RandomX.  If not, see<http://www.gnu.org/licenses/>.
 //Scratchpad L1 size in bytes. Must be a power of two and less than or equal to RANDOMX_SCRATCHPAD_L2.
 #define RANDOMX_SCRATCHPAD_L1      (16 * 1024)
 
-//How many register bits must be zero for a jump condition to be triggered
-#define RANDOMX_CONDITION_BITS     7
+//How many register bits must be zero for CBRANCH instruction to jump. Must be an integer in the range 1-16.
+#define RANDOMX_JUMP_BITS          8
 
 /*
 Instruction frequencies (per 256 opcodes)
 Total sum of frequencies must be 256
 */
 
-#if 0
-
-#define RANDOMX_FREQ_IADD_RS       32
+#define RANDOMX_FREQ_IADD_RS       25
 #define RANDOMX_FREQ_IADD_M         7
-#define RANDOMX_FREQ_ISUB_R        17
-#define RANDOMX_FREQ_ISUB_M         7
-#define RANDOMX_FREQ_IMUL_R        16
-#define RANDOMX_FREQ_IMUL_M         4
-#define RANDOMX_FREQ_IMULH_R        4
-#define RANDOMX_FREQ_IMULH_M        1
-#define RANDOMX_FREQ_ISMULH_R       4
-#define RANDOMX_FREQ_ISMULH_M       1
-#define RANDOMX_FREQ_IMUL_RCP       8
-#define RANDOMX_FREQ_INEG_R         2
-#define RANDOMX_FREQ_IXOR_R        15
-#define RANDOMX_FREQ_IXOR_M         5
-#define RANDOMX_FREQ_IROR_R        10
-#define RANDOMX_FREQ_IROL_R         0
-#define RANDOMX_FREQ_ISWAP_R        4
-
-#define RANDOMX_FREQ_FSWAP_R        8
-#define RANDOMX_FREQ_FADD_R        20
-#define RANDOMX_FREQ_FADD_M         5
-#define RANDOMX_FREQ_FSUB_R        20
-#define RANDOMX_FREQ_FSUB_M         5
-#define RANDOMX_FREQ_FSCAL_R        6
-#define RANDOMX_FREQ_FMUL_R        20
-#define RANDOMX_FREQ_FDIV_M         4
-#define RANDOMX_FREQ_FSQRT_R        6
-
-#define RANDOMX_FREQ_COND_R         8
-#define RANDOMX_FREQ_CFROUND        1
-#define RANDOMX_FREQ_ISTORE        16
-
-#define RANDOMX_FREQ_NOP            0
-
-#else
-
-#define RANDOMX_FREQ_IADD_RS       32
-#define RANDOMX_FREQ_IADD_M         7
-#define RANDOMX_FREQ_ISUB_R        17
+#define RANDOMX_FREQ_ISUB_R        16
 #define RANDOMX_FREQ_ISUB_M         7
 #define RANDOMX_FREQ_IMUL_R        16
 #define RANDOMX_FREQ_IMUL_M         4
@@ -135,13 +100,12 @@ Total sum of frequencies must be 256
 #define RANDOMX_FREQ_FDIV_M         0
 #define RANDOMX_FREQ_FSQRT_R        0
 
-#define RANDOMX_FREQ_COND_R         0
+#define RANDOMX_FREQ_CBRANCH        0
 #define RANDOMX_FREQ_CFROUND        0
+
 #define RANDOMX_FREQ_ISTORE        16
 
-#define RANDOMX_FREQ_NOP          103
-
-#endif
+#define RANDOMX_FREQ_NOP          111
 /*                               ------
                                   256
 */

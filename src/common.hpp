@@ -21,6 +21,7 @@ along with RandomX.  If not, see<http://www.gnu.org/licenses/>.
 
 #include <cstdint>
 #include <iostream>
+#include <climits>
 #include "blake2/endian.h"
 #include "configuration.h"
 #include "randomx.h"
@@ -40,18 +41,17 @@ namespace randomx {
 	static_assert(RANDOMX_SCRATCHPAD_L2 >= RANDOMX_SCRATCHPAD_L1, "RANDOMX_SCRATCHPAD_L2 must be greater than or equal to RANDOMX_SCRATCHPAD_L1.");
 	static_assert((RANDOMX_SCRATCHPAD_L1 & (RANDOMX_SCRATCHPAD_L1 - 1)) == 0, "RANDOMX_SCRATCHPAD_L1 must be a power of 2.");
 	static_assert(RANDOMX_CACHE_ACCESSES > 1, "RANDOMX_CACHE_ACCESSES must be greater than 1");
+	static_assert(RANDOMX_JUMP_BITS >= 1 && RANDOMX_JUMP_BITS <= 16, "RANDOMX_JUMP_BITS must be an integer in the range 1-16.");
 
 	constexpr int wtSum = RANDOMX_FREQ_IADD_RS + RANDOMX_FREQ_IADD_M + RANDOMX_FREQ_ISUB_R + \
 		RANDOMX_FREQ_ISUB_M + RANDOMX_FREQ_IMUL_R + RANDOMX_FREQ_IMUL_M + RANDOMX_FREQ_IMULH_R + \
 		RANDOMX_FREQ_IMULH_M + RANDOMX_FREQ_ISMULH_R + RANDOMX_FREQ_ISMULH_M + RANDOMX_FREQ_IMUL_RCP + \
 		RANDOMX_FREQ_INEG_R + RANDOMX_FREQ_IXOR_R + RANDOMX_FREQ_IXOR_M + RANDOMX_FREQ_IROR_R + RANDOMX_FREQ_ISWAP_R + \
 		RANDOMX_FREQ_FSWAP_R + RANDOMX_FREQ_FADD_R + RANDOMX_FREQ_FADD_M + RANDOMX_FREQ_FSUB_R + RANDOMX_FREQ_FSUB_M + \
-		RANDOMX_FREQ_FSCAL_R + RANDOMX_FREQ_FMUL_R + RANDOMX_FREQ_FDIV_M + RANDOMX_FREQ_FSQRT_R + RANDOMX_FREQ_COND_R + \
+		RANDOMX_FREQ_FSCAL_R + RANDOMX_FREQ_FMUL_R + RANDOMX_FREQ_FDIV_M + RANDOMX_FREQ_FSQRT_R + RANDOMX_FREQ_CBRANCH + \
 		RANDOMX_FREQ_CFROUND + RANDOMX_FREQ_ISTORE + RANDOMX_FREQ_NOP;
 
 	static_assert(wtSum == 256,	"Sum of instruction frequencies must be 256.");
-
-	using addr_t = uint32_t;
 
 	constexpr int ArgonBlockSize = 1024;
 	constexpr int ArgonSaltSize = sizeof(RANDOMX_ARGON_SALT) - 1;
@@ -61,6 +61,8 @@ namespace randomx {
 	constexpr uint32_t CacheSize = RANDOMX_ARGON_MEMORY * ArgonBlockSize;
 	constexpr uint64_t DatasetSize = RANDOMX_DATASET_BASE_SIZE + RANDOMX_DATASET_EXTRA_SIZE;
 	constexpr uint32_t DatasetExtraItems = RANDOMX_DATASET_EXTRA_SIZE / RANDOMX_DATASET_ITEM_SIZE;
+	constexpr uint32_t ConditionMask = ((1 << RANDOMX_JUMP_BITS) - 1);
+	constexpr int StoreL3Condition = 14;
 
 #ifdef TRACE
 	constexpr bool trace = true;
@@ -78,11 +80,18 @@ namespace randomx {
 #endif
 #endif
 
+	using addr_t = uint32_t;
+
 	using int_reg_t = uint64_t;
 
 	struct fpu_reg_t {
 		double lo;
 		double hi;
+	};
+
+	struct RegisterUsage {
+		int32_t lastUsed;
+		int32_t count;
 	};
 
 	constexpr uint32_t ScratchpadL1 = RANDOMX_SCRATCHPAD_L1 / sizeof(int_reg_t);
@@ -95,8 +104,34 @@ namespace randomx {
 	constexpr int ScratchpadL3Mask = (ScratchpadL3 - 1) * 8;
 	constexpr int ScratchpadL3Mask64 = (ScratchpadL3 / 8 - 1) * 64;
 	constexpr int RegistersCount = 8;
+	constexpr int RegisterCountFlt = RegistersCount / 2;
 	constexpr int RegisterNeedsDisplacement = 5; //x86 r13 register
 	constexpr int RegisterNeedsSib = 4; //x86 r12 register
+
+	inline int getConditionRegister(RegisterUsage(&registerUsage)[RegistersCount]) {
+		int min = INT_MAX;
+		int minCount = 0;
+		int minIndex;
+		//prefer registers that have been used as a condition register fewer times
+		for (unsigned i = 0; i < RegistersCount; ++i) {
+			if (registerUsage[i].lastUsed < min || (registerUsage[i].lastUsed == min && registerUsage[i].count < minCount)) {
+				min = registerUsage[i].lastUsed;
+				minCount = registerUsage[i].count;
+				minIndex = i;
+			}
+		}
+		return minIndex;
+	}
+
+	constexpr int mantissaSize = 52;
+	constexpr int exponentSize = 11;
+	constexpr uint64_t mantissaMask = (1ULL << mantissaSize) - 1;
+	constexpr uint64_t exponentMask = (1ULL << exponentSize) - 1;
+	constexpr int exponentBias = 1023;
+	constexpr int dynamicExponentBits = 4;
+	constexpr int staticExponentBits = 4;
+	constexpr uint64_t constExponentBits = 0x300;
+	constexpr uint64_t dynamicMantissaMask = (1ULL << (mantissaSize + dynamicExponentBits)) - 1;
 
 	struct MemoryRegisters {
 		addr_t mx, ma;
@@ -110,13 +145,11 @@ namespace randomx {
 		fpu_reg_t a[RegistersCount / 2];
 	};
 
-	typedef void(*DatasetReadFunc)(addr_t, MemoryRegisters&, int_reg_t(&reg)[RegistersCount]);
-	typedef void(*ProgramFunc)(RegisterFile&, MemoryRegisters&, uint8_t* /* scratchpad */, uint64_t);
-	typedef void(*DatasetInitFunc)(randomx_cache* cache, uint8_t* dataset, uint32_t startBlock, uint32_t endBlock);
+	typedef void(DatasetReadFunc)(addr_t, MemoryRegisters&, int_reg_t(&reg)[RegistersCount]);
+	typedef void(ProgramFunc)(RegisterFile&, MemoryRegisters&, uint8_t* /* scratchpad */, uint64_t);
+	typedef void(DatasetInitFunc)(randomx_cache* cache, uint8_t* dataset, uint32_t startBlock, uint32_t endBlock);
 
-	typedef void(*DatasetDeallocFunc)(randomx_dataset*);
-	typedef void(*CacheDeallocFunc)(randomx_cache*);
-	typedef void(*CacheInitializeFunc)(randomx_cache*, const void*, size_t);
+	typedef void(DatasetDeallocFunc)(randomx_dataset*);
+	typedef void(CacheDeallocFunc)(randomx_cache*);
+	typedef void(CacheInitializeFunc)(randomx_cache*, const void*, size_t);
 }
-
-std::ostream& operator<<(std::ostream& os, const randomx::RegisterFile& rf);

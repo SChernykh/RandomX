@@ -57,7 +57,7 @@ namespace randomx {
 		constexpr int FMUL_R = 23;
 		constexpr int FDIV_M = 24;
 		constexpr int FSQRT_R = 25;
-		constexpr int COND_R = 26;
+		constexpr int CBRANCH = 26;
 		constexpr int CFROUND = 27;
 		constexpr int ISTORE = 28;
 		constexpr int NOP = 29;
@@ -81,11 +81,11 @@ namespace randomx {
 		int getModMem() const {
 			return mod % 4; //bits 0-1
 		}
-		int getModCond() const {
-			return (mod >> 2) % 8; //bits 2-4
-		}
 		int getModShift() const {
-			return mod >> 5; //bits 5-7
+			return (mod >> 2) % 4; //bits 2-3
+		}
+		int getModCond() const {
+			return mod >> 4; //bits 4-7
 		}
 		void setMod(uint8_t val) {
 			mod = val;
@@ -103,36 +103,36 @@ namespace randomx {
 		void genAddressReg(std::ostream& os) const;
 		void genAddressImm(std::ostream& os) const;
 		void genAddressRegDst(std::ostream&) const;
-		void  h_IADD_RS(std::ostream&) const;
-		void  h_IADD_M(std::ostream&) const;
-		void  h_ISUB_R(std::ostream&) const;
-		void  h_ISUB_M(std::ostream&) const;
-		void  h_IMUL_R(std::ostream&) const;
-		void  h_IMUL_M(std::ostream&) const;
-		void  h_IMULH_R(std::ostream&) const;
-		void  h_IMULH_M(std::ostream&) const;
-		void  h_ISMULH_R(std::ostream&) const;
-		void  h_ISMULH_M(std::ostream&) const;
-		void  h_IMUL_RCP(std::ostream&) const;
-		void  h_INEG_R(std::ostream&) const;
-		void  h_IXOR_R(std::ostream&) const;
-		void  h_IXOR_M(std::ostream&) const;
-		void  h_IROR_R(std::ostream&) const;
-		void  h_IROL_R(std::ostream&) const;
-		void  h_ISWAP_R(std::ostream&) const;
-		void  h_FSWAP_R(std::ostream&) const;
-		void  h_FADD_R(std::ostream&) const;
-		void  h_FADD_M(std::ostream&) const;
-		void  h_FSUB_R(std::ostream&) const;
-		void  h_FSUB_M(std::ostream&) const;
-		void  h_FSCAL_R(std::ostream&) const;
-		void  h_FMUL_R(std::ostream&) const;
-		void  h_FDIV_M(std::ostream&) const;
-		void  h_FSQRT_R(std::ostream&) const;
-		void  h_COND_R(std::ostream&) const;
-		void  h_CFROUND(std::ostream&) const;
-		void  h_ISTORE(std::ostream&) const;
-		void  h_NOP(std::ostream&) const;
+		void h_IADD_RS(std::ostream&) const;
+		void h_IADD_M(std::ostream&) const;
+		void h_ISUB_R(std::ostream&) const;
+		void h_ISUB_M(std::ostream&) const;
+		void h_IMUL_R(std::ostream&) const;
+		void h_IMUL_M(std::ostream&) const;
+		void h_IMULH_R(std::ostream&) const;
+		void h_IMULH_M(std::ostream&) const;
+		void h_ISMULH_R(std::ostream&) const;
+		void h_ISMULH_M(std::ostream&) const;
+		void h_IMUL_RCP(std::ostream&) const;
+		void h_INEG_R(std::ostream&) const;
+		void h_IXOR_R(std::ostream&) const;
+		void h_IXOR_M(std::ostream&) const;
+		void h_IROR_R(std::ostream&) const;
+		void h_IROL_R(std::ostream&) const;
+		void h_ISWAP_R(std::ostream&) const;
+		void h_FSWAP_R(std::ostream&) const;
+		void h_FADD_R(std::ostream&) const;
+		void h_FADD_M(std::ostream&) const;
+		void h_FSUB_R(std::ostream&) const;
+		void h_FSUB_M(std::ostream&) const;
+		void h_FSCAL_R(std::ostream&) const;
+		void h_FMUL_R(std::ostream&) const;
+		void h_FDIV_M(std::ostream&) const;
+		void h_FSQRT_R(std::ostream&) const;
+		void h_CBRANCH(std::ostream&) const;
+		void h_CFROUND(std::ostream&) const;
+		void h_ISTORE(std::ostream&) const;
+		void h_NOP(std::ostream&) const;
 	};
 
 	static_assert(sizeof(Instruction) == 8, "Invalid size of struct randomx::Instruction");
