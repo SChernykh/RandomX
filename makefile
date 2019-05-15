@@ -12,13 +12,13 @@ OBJDIR=obj
 LDFLAGS=-lpthread
 RXA=$(BINDIR)/randomx.a
 BINARIES=$(RXA) $(BINDIR)/benchmark $(BINDIR)/code-generator
-RXOBJS=$(addprefix $(OBJDIR)/,aes_hash.o argon2_ref.o dataset.o jit_compiler_x86.o soft_aes.o virtual_memory.o vm_interpreted.o allocator.o assembly_generator_x86.o instruction.o randomx.o superscalar.o vm_compiled.o vm_interpreted_light.o argon2_core.o blake2_generator.o instructions_portable.o reciprocal.o virtual_machine.o vm_compiled_light.o blake2b.o)
+RXOBJS=$(addprefix $(OBJDIR)/,aes_hash.o argon2_ref.o dataset.o soft_aes.o virtual_memory.o vm_interpreted.o allocator.o assembly_generator_x86.o instruction.o randomx.o superscalar.o vm_compiled.o vm_interpreted_light.o argon2_core.o blake2_generator.o instructions_portable.o reciprocal.o virtual_machine.o vm_compiled_light.o blake2b.o)
 ifeq ($(PLATFORM),amd64)
-    RXOBJS += $(OBJDIR)/jit_compiler_x86_static.o
+    RXOBJS += $(addprefix $(OBJDIR)/,jit_compiler_x86_static.o jit_compiler_x86.o)
     CXXFLAGS += -maes
 endif
 ifeq ($(PLATFORM),x86_64)
-    RXOBJS += $(OBJDIR)/jit_compiler_x86_static.o
+    RXOBJS += $(addprefix $(OBJDIR)/,jit_compiler_x86_static.o jit_compiler_x86.o)
     CXXFLAGS += -maes
 endif
 
@@ -88,7 +88,7 @@ $(OBJDIR)/jit_compiler_x86.o: $(SRCDIR)/jit_compiler_x86.cpp $(SRCDIR)/jit_compi
  $(SRCDIR)/superscalar_program.hpp $(SRCDIR)/instruction.hpp $(SRCDIR)/blake2_generator.hpp \
  $(SRCDIR)/program.hpp $(SRCDIR)/reciprocal.h $(SRCDIR)/virtual_memory.hpp \
  $(SRCDIR)/instruction_weights.hpp
-$(OBJDIR)/jit_compiler_x86_static.o: $(SRCDIR)/jit_compiler_x86_static.S \
+$(OBJDIR)/jit_compiler_x86_static.o: $(SRCDIR)/jit_compiler_x86_static.S $(SRCDIR)/configuration.h \
  $(SRCDIR)/asm/program_prologue_linux.inc $(SRCDIR)/asm/program_xmm_constants.inc \
  $(SRCDIR)/asm/program_loop_load.inc $(SRCDIR)/asm/program_read_dataset.inc \
  $(SRCDIR)/asm/program_read_dataset_sshash_init.inc \

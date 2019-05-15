@@ -123,32 +123,55 @@ along with RandomX.  If not, see<http://www.gnu.org/licenses/>.
 	#define HAVE_SMULH
 #endif
 
-void setRoundMode(uint32_t rcflag) {
-	switch (rcflag & 3) {
-		case RoundDown:
-			setRoundMode_(FE_DOWNWARD);
-			break;
-		case RoundUp:
-			setRoundMode_(FE_UPWARD);
-			break;
-		case RoundToZero:
-			setRoundMode_(FE_TOWARDZERO);
-			break;
-		case RoundToNearest:
-			setRoundMode_(FE_TONEAREST);
-			break;
-		default:
-			UNREACHABLE;
+#ifdef RANDOMX_DEFAULT_FENV
+
+void rx_reset_float_state() {
+	setRoundMode_(FE_TONEAREST);
+	rx_set_double_precision(); //set precision to 53 bits if needed by the platform
+}
+
+void rx_set_rounding_mode(uint32_t mode) {
+	switch (mode & 3) {
+	case RoundDown:
+		setRoundMode_(FE_DOWNWARD);
+		break;
+	case RoundUp:
+		setRoundMode_(FE_UPWARD);
+		break;
+	case RoundToZero:
+		setRoundMode_(FE_TOWARDZERO);
+		break;
+	case RoundToNearest:
+		setRoundMode_(FE_TONEAREST);
+		break;
+	default:
+		UNREACHABLE;
 	}
 }
 
-void initFpu() {
-#ifdef __SSE2__
-	_mm_setcsr(0x9FC0); //Flush to zero, denormals are zero, default rounding mode, all exceptions disabled
-#else
-	setRoundMode(FE_TONEAREST);
 #endif
+
+#ifdef RANDOMX_USE_X87
+
+#ifdef _M_IX86
+
+void rx_set_double_precision() {
+	_control87(_PC_53, _MCW_PC);
 }
+
+#elif defined(__i386)
+
+void rx_set_double_precision() {
+	uint16_t volatile x87cw;
+	asm volatile("fstcw %0" : "=m" (x87cw));
+	x87cw &= ~0x300;
+	x87cw |= 0x200;
+	asm volatile("fldcw %0" : : "m" (x87cw));
+}
+
+#endif
+
+#endif //RANDOMX_USE_X87
 
 union double_ser_t {
 	double f;

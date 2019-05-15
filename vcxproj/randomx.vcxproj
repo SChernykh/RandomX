@@ -122,6 +122,10 @@
       </AdditionalOptions>
       <StackReserveSize>4194304</StackReserveSize>
     </Link>
+    <PreBuildEvent>
+      <Command>powershell -ExecutionPolicy Bypass -File .\h2inc.ps1 ..\src\configuration.h &gt; ..\src\asm\configuration.asm
+SET ERRORLEVEL = 0</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\allocator.cpp" />
@@ -156,6 +160,9 @@
     <ClInclude Include="..\src\assembly_generator_x86.hpp" />
     <ClInclude Include="..\src\blake2_generator.hpp" />
     <ClInclude Include="..\src\common.hpp" />
+    <ClInclude Include="..\src\jit_compiler.hpp" />
+    <ClInclude Include="..\src\jit_compiler_a64.hpp" />
+    <ClInclude Include="..\src\jit_compiler_fallback.hpp" />
     <ClInclude Include="..\src\vm_compiled_light.hpp" />
     <ClInclude Include="..\src\vm_compiled.hpp" />
     <ClInclude Include="..\src\configuration.h" />

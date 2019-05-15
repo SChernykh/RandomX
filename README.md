@@ -1,8 +1,5 @@
 # RandomX
-RandomX is a proof-of-work (PoW) algorithm that is optimized for general-purpose CPUs. RandomX uses random code execution (hence the name) together with several memory-hard techniques to achieve the following goals:
-
-* Prevent the development of a single-chip [ASIC](https://en.wikipedia.org/wiki/Application-specific_integrated_circuit)
-* Minimize the efficiency advantage of specialized hardware compared to a general-purpose CPU
+RandomX is a proof-of-work (PoW) algorithm that is optimized for general-purpose CPUs. RandomX uses random code execution (hence the name) together with several memory-hard techniques to minimize the efficiency advantage of specialized hardware.
 
 ## Overview
 
@@ -23,7 +20,7 @@ Design notes available in [design.md](doc/design.md).
 
 RandomX is written in C++11 and builds a static library with a C API provided by header file [randomx.h](src/randomx.h). Minimal API usage example is provided in [api-example1.c](src/tests/api-example1.c). The reference code includes a `benchmark` executable for testing.
 
-### Ubuntu/Debian
+### Linux
 
 Build dependencies: `make` and `gcc` (minimum version 4.8, but version 7+ is recommended).
 
@@ -52,27 +49,25 @@ If you wish to use RandomX as a PoW algorithm for your cryptocurrency, we strong
 * Scratchpad size (`RANDOMX_SCRATCHPAD_L3`, `RANDOMX_SCRATCHPAD_L2` and `RANDOMX_SCRATCHPAD_L1`).
 * Instruction frequencies (parameters starting with `RANDOMX_FREQ_`).
 
-### Performance
+### CPU mining performance
 Preliminary performance of selected CPUs using the optimal number of threads (T) and large pages (if possible), in hashes per second (H/s):
 
 |CPU|RAM|OS|AES|Fast mode|Light mode|
 |---|---|--|---|---------|--------------|
-AMD Ryzen 7 1700|16 GB DDR4|Ubuntu 16.04|hardware|4090 H/s (8T)|620 H/s (16T)|
+AMD Ryzen 7 1700|16 GB DDR4|Ubuntu 16.04|hardware|4100 H/s (8T)|620 H/s (16T)|
 Intel Core i7-8550U|16 GB DDR4|Windows 10|hardware|1700 H/s (4T)|350 H/s (8T)|
 Intel Core i3-3220|2 GB DDR3|Ubuntu 16.04|software|-|145 H/s (4T)|
 Raspberry Pi 3|1 GB DDR2|Ubuntu 16.04|software|-|2.0 H/s (4T) †|
 
 † Using the interpreter mode. Compiled mode is expected to increase performance by a factor of 10.
 
+### GPU mining performance
+
+SChernykh has developed a CUDA miner for NVIDIA GPUs. [Benchmarks are listed here](https://github.com/SChernykh/RandomX_CUDA).
+
+Note that GPUs are at a disadvantage when running RandomX since the algorithm was designed to be efficient on CPUs.
+
 # FAQ
-
-### Can RandomX run on a GPU?
-
-RandomX was designed to be efficient on CPUs. Designing an algorithm compatible with both CPUs and GPUs brings many limitations and ultimately decreases ASIC resistance.
-
-GPUs are expected to be at a disadvantage when running RandomX, but the exact performance has not been determined yet due to lack of a working GPU implementation.
-
-A rough estimate for AMD Vega 56 GPU gave an upper limit of 1200 H/s, comparable to a quad core CPU (details in issue [#24](https://github.com/tevador/RandomX/issues/24)).
 
 ### Does RandomX facilitate botnets/malware mining or web mining?
 Efficient mining requires more than 2 GiB of memory, which is difficult to hide in an infected computer and disqualifies many low-end machines such as IoT devices. Web mining is nearly impossible due to the large memory requirement and low performance in interpreted mode.
@@ -82,9 +77,9 @@ Efficient mining requires more than 2 GiB of memory, which is difficult to hide 
 RandomX uses only operations that are guaranteed to give correctly rounded results by the [IEEE 754](https://en.wikipedia.org/wiki/IEEE_754) standard: addition, subtraction, multiplication, division and square root. Special care is taken to avoid corner cases such as NaN values or denormals.
 
 The reference implementation has been validated on the following platforms:
-* x86+SSE2 (32-bit, little-endian)
+* x86 (32-bit, little-endian)
 * x86-64 (64-bit, little-endian)
-* ARMv7+NEON (32-bit, little-endian)
+* ARMv7+VFPv3 (32-bit, little-endian)
 * ARMv8 (64-bit, little-endian)
 * PPC64 (64-bit, big-endian)
 
