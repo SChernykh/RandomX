@@ -84,7 +84,7 @@ Instruction frequencies (per 256 opcodes)
 Total sum of frequencies must be 256
 */
 
-#define RANDOMX_FREQ_IADD_RS        0
+#define RANDOMX_FREQ_IADD_RS       25
 #define RANDOMX_FREQ_IADD_M         0
 #define RANDOMX_FREQ_ISUB_R         0
 #define RANDOMX_FREQ_ISUB_M         0
@@ -117,7 +117,7 @@ Total sum of frequencies must be 256
 
 #define RANDOMX_FREQ_ISTORE         0
 
-#define RANDOMX_FREQ_NOP          256
+#define RANDOMX_FREQ_NOP          231
 /*                               ------
                                   256
 */
