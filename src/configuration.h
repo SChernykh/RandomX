@@ -105,10 +105,10 @@ Total sum of frequencies must be 256
 #define RANDOMX_FREQ_FSWAP_R        8
 #define RANDOMX_FREQ_FADD_R        20
 #define RANDOMX_FREQ_FADD_M         5
-#define RANDOMX_FREQ_FSUB_R         0
-#define RANDOMX_FREQ_FSUB_M         0
-#define RANDOMX_FREQ_FSCAL_R        0
-#define RANDOMX_FREQ_FMUL_R         0
+#define RANDOMX_FREQ_FSUB_R        20
+#define RANDOMX_FREQ_FSUB_M         5
+#define RANDOMX_FREQ_FSCAL_R        6
+#define RANDOMX_FREQ_FMUL_R        20
 #define RANDOMX_FREQ_FDIV_M         0
 #define RANDOMX_FREQ_FSQRT_R        0
 
@@ -117,7 +117,7 @@ Total sum of frequencies must be 256
 
 #define RANDOMX_FREQ_ISTORE        16
 
-#define RANDOMX_FREQ_NOP           61
+#define RANDOMX_FREQ_NOP           10
 /*                               ------
                                   256
 */
