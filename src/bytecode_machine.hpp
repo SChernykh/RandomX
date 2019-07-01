@@ -114,17 +114,17 @@ namespace randomx {
 			nreg = &regFile;
 		}
 
-		void compileProgram(Program& program, InstructionByteCode bytecode[RANDOMX_PROGRAM_SIZE], NativeRegisterFile& regFile) {
+		void compileProgram(Program& program, InstructionByteCode* bytecode, NativeRegisterFile& regFile) {
 			beginCompilation(regFile);
-			for (unsigned i = 0; i < RANDOMX_PROGRAM_SIZE; ++i) {
+			for (unsigned i = 0; i < RandomX_CurrentConfig.ProgramSize; ++i) {
 				auto& instr = program(i);
 				auto& ibc = bytecode[i];
 				compileInstruction(instr, i, ibc);
 			}
 		}
 
-		static void executeBytecode(InstructionByteCode bytecode[RANDOMX_PROGRAM_SIZE], uint8_t* scratchpad, ProgramConfiguration& config) {
-			for (int pc = 0; pc < RANDOMX_PROGRAM_SIZE; ++pc) {
+		static void executeBytecode(InstructionByteCode* bytecode, uint8_t* scratchpad, ProgramConfiguration& config) {
+			for (int pc = 0; pc < RandomX_CurrentConfig.ProgramSize; ++pc) {
 				auto& ibc = bytecode[pc];
 				executeInstruction(ibc, pc, scratchpad, config);
 			}

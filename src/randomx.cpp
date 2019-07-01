@@ -33,9 +33,36 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vm_compiled.hpp"
 #include "vm_compiled_light.hpp"
 #include "blake2/blake2.h"
+#include "jit_compiler_x86_static.hpp"
 #include <cassert>
 
+const RandomX_Configuration RandomX_DefaultConfig = {
+	/* ArgonMemory */				262144,
+	/* ArgonIterations */			3,
+	/* ArgonLanes */				1,
+	/* ArgonSalt   */				"RandomX\x03",
+	/* ProgramSize */				256,
+	/* ProgramIterations */			2048,
+	/* ProgramCount */				8,
+	/* codeShhPrefetchTweaked */	{},
+};
+
+RandomX_Configuration RandomX_CurrentConfig = RandomX_DefaultConfig;
+
+void RandomX_Configuration::initCode()
+{
+	const uint8_t* a = (const uint8_t*) &randomx_sshash_prefetch;
+	const uint8_t* b = (const uint8_t*) &randomx_sshash_end;
+	memcpy(codeShhPrefetchTweaked, a, b - a);
+	*(uint32_t*)(codeShhPrefetchTweaked + 3) = ArgonMemory * 16 - 1;
+}
+
 extern "C" {
+
+	void randomx_apply_config(const RandomX_Configuration* config) {
+		RandomX_CurrentConfig = *config;
+		RandomX_CurrentConfig.initCode();
+	}
 
 	randomx_cache *randomx_alloc_cache(randomx_flags flags) {
 		randomx_cache *cache;
@@ -48,7 +75,7 @@ extern "C" {
 					cache->jit = nullptr;
 					cache->initialize = &randomx::initCache;
 					cache->datasetInit = &randomx::initDataset;
-					cache->memory = (uint8_t*)randomx::DefaultAllocator::allocMemory(randomx::CacheSize);
+					cache->memory = (uint8_t*)randomx::DefaultAllocator::allocMemory(RandomX_CurrentConfig.ArgonMemory * randomx::ArgonBlockSize);
 					break;
 
 				case RANDOMX_FLAG_JIT:
@@ -56,7 +83,7 @@ extern "C" {
 					cache->jit = new randomx::JitCompiler();
 					cache->initialize = &randomx::initCacheCompile;
 					cache->datasetInit = cache->jit->getDatasetInitFunc();
-					cache->memory = (uint8_t*)randomx::DefaultAllocator::allocMemory(randomx::CacheSize);
+					cache->memory = (uint8_t*)randomx::DefaultAllocator::allocMemory(RandomX_CurrentConfig.ArgonMemory * randomx::ArgonBlockSize);
 					break;
 
 				case RANDOMX_FLAG_LARGE_PAGES:
@@ -64,7 +91,7 @@ extern "C" {
 					cache->jit = nullptr;
 					cache->initialize = &randomx::initCache;
 					cache->datasetInit = &randomx::initDataset;
-					cache->memory = (uint8_t*)randomx::LargePageAllocator::allocMemory(randomx::CacheSize);
+					cache->memory = (uint8_t*)randomx::LargePageAllocator::allocMemory(RandomX_CurrentConfig.ArgonMemory * randomx::ArgonBlockSize);
 					break;
 
 				case RANDOMX_FLAG_JIT | RANDOMX_FLAG_LARGE_PAGES:
@@ -72,7 +99,7 @@ extern "C" {
 					cache->jit = new randomx::JitCompiler();
 					cache->initialize = &randomx::initCacheCompile;
 					cache->datasetInit = cache->jit->getDatasetInitFunc();
-					cache->memory = (uint8_t*)randomx::LargePageAllocator::allocMemory(randomx::CacheSize);
+					cache->memory = (uint8_t*)randomx::LargePageAllocator::allocMemory(RandomX_CurrentConfig.ArgonMemory * randomx::ArgonBlockSize);
 					break;
 
 				default:
@@ -269,7 +296,7 @@ extern "C" {
 		assert(blakeResult == 0);
 		machine->initScratchpad(&tempHash);
 		machine->resetRoundingMode();
-		for (int chain = 0; chain < RANDOMX_PROGRAM_COUNT - 1; ++chain) {
+		for (int chain = 0; chain < RandomX_CurrentConfig.ProgramCount - 1; ++chain) {
 			machine->run(&tempHash);
 			blakeResult = blake2b(tempHash, sizeof(tempHash), machine->getRegisterFile(), sizeof(randomx::RegisterFile), nullptr, 0);
 			assert(blakeResult == 0);

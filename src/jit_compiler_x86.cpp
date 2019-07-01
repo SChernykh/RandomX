@@ -242,7 +242,7 @@ namespace randomx {
 			if (j < N - 1) {
 				emit(REX_MOV_RR64);
 				emitByte(0xd8 + prog.getAddressRegister());
-				emit(codeShhPrefetch, codeSshPrefetchSize);
+				emit(RandomX_CurrentConfig.codeShhPrefetchTweaked, codeSshPrefetchSize);
 #ifdef RANDOMX_ALIGN
 				int align = (codePos % 16);
 				while (align != 0) {

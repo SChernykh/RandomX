@@ -51,7 +51,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "jit_compiler.hpp"
 #include "intrin_portable.h"
 
-static_assert(RANDOMX_ARGON_MEMORY % (RANDOMX_ARGON_LANES * ARGON2_SYNC_POINTS) == 0, "RANDOMX_ARGON_MEMORY - invalid value");
+//static_assert(RANDOMX_ARGON_MEMORY % (RANDOMX_ARGON_LANES * ARGON2_SYNC_POINTS) == 0, "RANDOMX_ARGON_MEMORY - invalid value");
 static_assert(ARGON2_BLOCK_SIZE == randomx::ArgonBlockSize, "Unpexpected value of ARGON2_BLOCK_SIZE");
 
 namespace randomx {
@@ -59,7 +59,7 @@ namespace randomx {
 	template<class Allocator>
 	void deallocCache(randomx_cache* cache) {
 		if (cache->memory != nullptr)
-			Allocator::freeMemory(cache->memory, CacheSize);
+			Allocator::freeMemory(cache->memory, RandomX_CurrentConfig.ArgonMemory * randomx::ArgonBlockSize);
 		if (cache->jit != nullptr)
 			delete cache->jit;
 	}
@@ -76,15 +76,15 @@ namespace randomx {
 		context.outlen = 0;
 		context.pwd = CONST_CAST(uint8_t *)key;
 		context.pwdlen = (uint32_t)keySize;
-		context.salt = CONST_CAST(uint8_t *)RANDOMX_ARGON_SALT;
-		context.saltlen = (uint32_t)randomx::ArgonSaltSize;
+		context.salt = CONST_CAST(uint8_t *)RandomX_CurrentConfig.ArgonSalt;
+		context.saltlen = (uint32_t)strlen(RandomX_CurrentConfig.ArgonSalt);
 		context.secret = NULL;
 		context.secretlen = 0;
 		context.ad = NULL;
 		context.adlen = 0;
-		context.t_cost = RANDOMX_ARGON_ITERATIONS;
-		context.m_cost = RANDOMX_ARGON_MEMORY;
-		context.lanes = RANDOMX_ARGON_LANES;
+		context.t_cost = RandomX_CurrentConfig.ArgonIterations;
+		context.m_cost = RandomX_CurrentConfig.ArgonMemory;
+		context.lanes = RandomX_CurrentConfig.ArgonLanes;
 		context.threads = 1;
 		context.allocate_cbk = NULL;
 		context.free_cbk = NULL;
@@ -150,7 +150,7 @@ namespace randomx {
 	constexpr uint64_t superscalarAdd7 = 9549104520008361294ULL;
 
 	static inline uint8_t* getMixBlock(uint64_t registerValue, uint8_t *memory) {
-		constexpr uint32_t mask = CacheSize / CacheLineSize - 1;
+		const uint32_t mask = (RandomX_CurrentConfig.ArgonMemory * randomx::ArgonBlockSize) / CacheLineSize - 1;
 		return memory + (registerValue & mask) * CacheLineSize;
 	}
 

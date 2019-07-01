@@ -49,10 +49,13 @@ typedef enum {
 typedef struct randomx_dataset randomx_dataset;
 typedef struct randomx_cache randomx_cache;
 typedef struct randomx_vm randomx_vm;
+typedef struct RandomX_Configuration;
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+RANDOMX_EXPORT void randomx_apply_config(const RandomX_Configuration* config);
 
 /**
  * Creates a randomx_cache structure and allocates memory for RandomX Cache.

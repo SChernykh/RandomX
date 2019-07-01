@@ -50,7 +50,7 @@ namespace randomx {
 
 	template<class Allocator, bool softAes>
 	void CompiledVm<Allocator, softAes>::execute() {
-		compiler.getProgramFunc()(reg, mem, scratchpad, RANDOMX_PROGRAM_ITERATIONS);
+		compiler.getProgramFunc()(reg, mem, scratchpad, RandomX_CurrentConfig.ProgramIterations);
 	}
 
 	template class CompiledVm<AlignedAllocator<CacheLineSize>, false>;

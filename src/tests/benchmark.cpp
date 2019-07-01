@@ -202,6 +202,8 @@ int main(int argc, char** argv) {
 		std::cout << " (" << initThreadCount << " thread" << (initThreadCount > 1 ? "s)" : ")");
 	std::cout << " ..." << std::endl;
 
+	randomx_apply_config(&RandomX_DefaultConfig);
+
 	try {
 		if (jit && !RANDOMX_HAVE_COMPILER) {
 			throw std::runtime_error("JIT compilation is not supported on this platform. Try without --jit");

@@ -65,7 +65,7 @@ namespace randomx {
 	private:
 		void execute();
 
-		InstructionByteCode bytecode[RANDOMX_PROGRAM_SIZE];
+		InstructionByteCode bytecode[512];
 	};
 
 	using InterpretedVmDefault = InterpretedVm<AlignedAllocator<CacheLineSize>, true>;

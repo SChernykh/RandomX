@@ -65,7 +65,7 @@ namespace randomx {
 		uint32_t spAddr0 = mem.mx;
 		uint32_t spAddr1 = mem.ma;
 
-		for(unsigned ic = 0; ic < RANDOMX_PROGRAM_ITERATIONS; ++ic) {
+		for(unsigned ic = 0; ic < RandomX_CurrentConfig.ProgramIterations; ++ic) {
 			uint64_t spMix = nreg.r[config.readReg0] ^ nreg.r[config.readReg1];
 			spAddr0 ^= spMix;
 			spAddr0 &= ScratchpadL3Mask64;

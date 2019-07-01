@@ -54,17 +54,17 @@ namespace randomx {
 			return load64(&entropyBuffer[i]);
 		}
 		uint32_t getSize() {
-			return RANDOMX_PROGRAM_SIZE;
+			return RandomX_CurrentConfig.ProgramSize;
 		}
 	private:
 		void print(std::ostream& os) const {
-			for (int i = 0; i < RANDOMX_PROGRAM_SIZE; ++i) {
+			for (int i = 0; i < RandomX_CurrentConfig.ProgramSize; ++i) {
 				auto instr = programBuffer[i];
 				os << instr;
 			}
 		}
 		uint64_t entropyBuffer[16];
-		Instruction programBuffer[RANDOMX_PROGRAM_SIZE];
+		Instruction programBuffer[512];
 	};
 
 	static_assert(sizeof(Program) % 64 == 0, "Invalid size of class randomx::Program");
