@@ -81,7 +81,7 @@ namespace randomx {
 	void BytecodeMachine::compileInstruction(RANDOMX_GEN_ARGS) {
 		int opcode = instr.opcode;
 
-		if (opcode < ceil_IADD_RS) {
+		if (opcode < RandomX_CurrentConfig.CEIL_IADD_RS) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::IADD_RS;
@@ -100,7 +100,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_IADD_M) {
+		if (opcode < RandomX_CurrentConfig.CEIL_IADD_M) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::IADD_M;
@@ -118,7 +118,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_ISUB_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_ISUB_R) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::ISUB_R;
@@ -134,7 +134,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_ISUB_M) {
+		if (opcode < RandomX_CurrentConfig.CEIL_ISUB_M) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::ISUB_M;
@@ -152,7 +152,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_IMUL_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_IMUL_R) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::IMUL_R;
@@ -168,7 +168,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_IMUL_M) {
+		if (opcode < RandomX_CurrentConfig.CEIL_IMUL_M) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::IMUL_M;
@@ -186,7 +186,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_IMULH_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_IMULH_R) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::IMULH_R;
@@ -196,7 +196,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_IMULH_M) {
+		if (opcode < RandomX_CurrentConfig.CEIL_IMULH_M) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::IMULH_M;
@@ -214,7 +214,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_ISMULH_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_ISMULH_R) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::ISMULH_R;
@@ -224,7 +224,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_ISMULH_M) {
+		if (opcode < RandomX_CurrentConfig.CEIL_ISMULH_M) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::ISMULH_M;
@@ -242,7 +242,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_IMUL_RCP) {
+		if (opcode < RandomX_CurrentConfig.CEIL_IMUL_RCP) {
 			uint64_t divisor = instr.getImm32();
 			if (!isPowerOf2(divisor)) {
 				auto dst = instr.dst % RegistersCount;
@@ -258,7 +258,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_INEG_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_INEG_R) {
 			auto dst = instr.dst % RegistersCount;
 			ibc.type = InstructionType::INEG_R;
 			ibc.idst = &nreg->r[dst];
@@ -266,7 +266,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_IXOR_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_IXOR_R) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::IXOR_R;
@@ -282,7 +282,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_IXOR_M) {
+		if (opcode < RandomX_CurrentConfig.CEIL_IXOR_M) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::IXOR_M;
@@ -300,7 +300,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_IROR_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_IROR_R) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::IROR_R;
@@ -316,7 +316,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_IROL_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_IROL_R) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::IROL_R;
@@ -332,7 +332,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_ISWAP_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_ISWAP_R) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			if (src != dst) {
@@ -348,7 +348,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_FSWAP_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_FSWAP_R) {
 			auto dst = instr.dst % RegistersCount;
 			ibc.type = InstructionType::FSWAP_R;
 			if (dst < RegisterCountFlt)
@@ -358,7 +358,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_FADD_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_FADD_R) {
 			auto dst = instr.dst % RegisterCountFlt;
 			auto src = instr.src % RegisterCountFlt;
 			ibc.type = InstructionType::FADD_R;
@@ -367,7 +367,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_FADD_M) {
+		if (opcode < RandomX_CurrentConfig.CEIL_FADD_M) {
 			auto dst = instr.dst % RegisterCountFlt;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::FADD_M;
@@ -378,7 +378,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_FSUB_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_FSUB_R) {
 			auto dst = instr.dst % RegisterCountFlt;
 			auto src = instr.src % RegisterCountFlt;
 			ibc.type = InstructionType::FSUB_R;
@@ -387,7 +387,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_FSUB_M) {
+		if (opcode < RandomX_CurrentConfig.CEIL_FSUB_M) {
 			auto dst = instr.dst % RegisterCountFlt;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::FSUB_M;
@@ -398,14 +398,14 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_FSCAL_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_FSCAL_R) {
 			auto dst = instr.dst % RegisterCountFlt;
 			ibc.fdst = &nreg->f[dst];
 			ibc.type = InstructionType::FSCAL_R;
 			return;
 		}
 
-		if (opcode < ceil_FMUL_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_FMUL_R) {
 			auto dst = instr.dst % RegisterCountFlt;
 			auto src = instr.src % RegisterCountFlt;
 			ibc.type = InstructionType::FMUL_R;
@@ -414,7 +414,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_FDIV_M) {
+		if (opcode < RandomX_CurrentConfig.CEIL_FDIV_M) {
 			auto dst = instr.dst % RegisterCountFlt;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::FDIV_M;
@@ -425,24 +425,24 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_FSQRT_R) {
+		if (opcode < RandomX_CurrentConfig.CEIL_FSQRT_R) {
 			auto dst = instr.dst % RegisterCountFlt;
 			ibc.type = InstructionType::FSQRT_R;
 			ibc.fdst = &nreg->e[dst];
 			return;
 		}
 
-		if (opcode < ceil_CBRANCH) {
+		if (opcode < RandomX_CurrentConfig.CEIL_CBRANCH) {
 			ibc.type = InstructionType::CBRANCH;
 			//jump condition
 			int creg = instr.dst % RegistersCount;
 			ibc.idst = &nreg->r[creg];
 			ibc.target = registerUsage[creg];
-			int shift = instr.getModCond() + ConditionOffset;
+			int shift = instr.getModCond() + RandomX_CurrentConfig.JumpOffset;
 			ibc.imm = signExtend2sCompl(instr.getImm32()) | (1ULL << shift);
-			if (ConditionOffset > 0 || shift > 0) //clear the bit below the condition mask - this limits the number of successive jumps to 2
+			if (RandomX_CurrentConfig.JumpOffset > 0 || shift > 0) //clear the bit below the condition mask - this limits the number of successive jumps to 2
 				ibc.imm &= ~(1ULL << (shift - 1));
-			ibc.memMask = ConditionMask << shift;
+			ibc.memMask = RandomX_CurrentConfig.ConditionMask_Calculated << shift;
 			//mark all registers as used
 			for (unsigned j = 0; j < RegistersCount; ++j) {
 				registerUsage[j] = i;
@@ -450,7 +450,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_CFROUND) {
+		if (opcode < RandomX_CurrentConfig.CEIL_CFROUND) {
 			auto src = instr.src % RegistersCount;
 			ibc.isrc = &nreg->r[src];
 			ibc.type = InstructionType::CFROUND;
@@ -458,7 +458,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_ISTORE) {
+		if (opcode < RandomX_CurrentConfig.CEIL_ISTORE) {
 			auto dst = instr.dst % RegistersCount;
 			auto src = instr.src % RegistersCount;
 			ibc.type = InstructionType::ISTORE;
@@ -472,7 +472,7 @@ namespace randomx {
 			return;
 		}
 
-		if (opcode < ceil_NOP) {
+		if (opcode < RandomX_CurrentConfig.CEIL_NOP) {
 			ibc.type = InstructionType::NOP;
 			return;
 		}

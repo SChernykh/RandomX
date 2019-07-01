@@ -48,7 +48,7 @@ namespace randomx {
 		void printCode(std::ostream& os) {
 			os << asmCode.rdbuf();
 		}
-	private:
+
 		void genAddressReg(Instruction&, const char*);
 		void genAddressRegDst(Instruction&, int);
 		int32_t genAddressImm(Instruction&);

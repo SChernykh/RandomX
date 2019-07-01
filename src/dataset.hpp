@@ -48,7 +48,7 @@ struct randomx_cache {
 	randomx::JitCompiler* jit;
 	randomx::CacheInitializeFunc* initialize;
 	randomx::DatasetInitFunc* datasetInit;
-	randomx::SuperscalarProgram programs[RANDOMX_CACHE_ACCESSES];
+	randomx::SuperscalarProgram programs[RANDOMX_CACHE_MAX_ACCESSES];
 	std::vector<uint64_t> reciprocalCache;
 
 	bool isInitialized() {
@@ -67,7 +67,7 @@ namespace randomx {
 	template<class Allocator>
 	void deallocDataset(randomx_dataset* dataset) {
 		if (dataset->memory != nullptr)
-			Allocator::freeMemory(dataset->memory, DatasetSize);
+			Allocator::freeMemory(dataset->memory, RANDOMX_DATASET_MAX_SIZE);
 	}
 
 	template<class Allocator>

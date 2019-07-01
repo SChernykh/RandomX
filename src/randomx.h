@@ -30,6 +30,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RANDOMX_H
 
 #include <stddef.h>
+#include <stdint.h>
+#include <type_traits>
+#include "intrin_portable.h"
 
 #define RANDOMX_HASH_SIZE 32
 #define RANDOMX_DATASET_ITEM_SIZE 64
@@ -49,13 +52,138 @@ typedef enum {
 typedef struct randomx_dataset randomx_dataset;
 typedef struct randomx_cache randomx_cache;
 typedef struct randomx_vm randomx_vm;
-typedef struct RandomX_Configuration;
+
+struct RandomX_ConfigurationBase
+{
+	RandomX_ConfigurationBase();
+
+	void Apply();
+
+	uint32_t ArgonMemory;
+	uint32_t ArgonIterations;
+	uint32_t ArgonLanes;
+	const char* ArgonSalt;
+	uint32_t CacheAccesses;
+	uint32_t SuperscalarLatency;
+
+	uint32_t DatasetBaseSize;
+	uint32_t DatasetExtraSize;
+
+	uint32_t ScratchpadL1_Size;
+	uint32_t ScratchpadL2_Size;
+	uint32_t ScratchpadL3_Size;
+
+	uint32_t ProgramSize;
+	uint32_t ProgramIterations;
+	uint32_t ProgramCount;
+
+	uint32_t JumpBits;
+	uint32_t JumpOffset;
+
+	uint32_t RANDOMX_FREQ_IADD_RS;
+	uint32_t RANDOMX_FREQ_IADD_M;
+	uint32_t RANDOMX_FREQ_ISUB_R;
+	uint32_t RANDOMX_FREQ_ISUB_M;
+	uint32_t RANDOMX_FREQ_IMUL_R;
+	uint32_t RANDOMX_FREQ_IMUL_M;
+	uint32_t RANDOMX_FREQ_IMULH_R;
+	uint32_t RANDOMX_FREQ_IMULH_M;
+	uint32_t RANDOMX_FREQ_ISMULH_R;
+	uint32_t RANDOMX_FREQ_ISMULH_M;
+	uint32_t RANDOMX_FREQ_IMUL_RCP;
+	uint32_t RANDOMX_FREQ_INEG_R;
+	uint32_t RANDOMX_FREQ_IXOR_R;
+	uint32_t RANDOMX_FREQ_IXOR_M;
+	uint32_t RANDOMX_FREQ_IROR_R;
+	uint32_t RANDOMX_FREQ_IROL_R;
+	uint32_t RANDOMX_FREQ_ISWAP_R;
+	uint32_t RANDOMX_FREQ_FSWAP_R;
+	uint32_t RANDOMX_FREQ_FADD_R;
+	uint32_t RANDOMX_FREQ_FADD_M;
+	uint32_t RANDOMX_FREQ_FSUB_R;
+	uint32_t RANDOMX_FREQ_FSUB_M;
+	uint32_t RANDOMX_FREQ_FSCAL_R;
+	uint32_t RANDOMX_FREQ_FMUL_R;
+	uint32_t RANDOMX_FREQ_FDIV_M;
+	uint32_t RANDOMX_FREQ_FSQRT_R;
+	uint32_t RANDOMX_FREQ_CBRANCH;
+	uint32_t RANDOMX_FREQ_CFROUND;
+	uint32_t RANDOMX_FREQ_ISTORE;
+	uint32_t RANDOMX_FREQ_NOP;
+
+	rx_vec_i128 fillAes4Rx4_Key[8];
+
+	uint8_t codeShhPrefetchTweaked[20];
+	uint8_t codeReadDatasetTweaked[64];
+	uint8_t codeReadDatasetLightSshInitTweaked[68];
+	uint8_t codeLoopLoadTweaked[140];
+
+	uint32_t CacheLineAlignMask_Calculated;
+	uint32_t DatasetExtraItems_Calculated;
+
+	uint32_t ScratchpadL1Mask_Calculated;
+	uint32_t ScratchpadL1Mask16_Calculated;
+	uint32_t ScratchpadL2Mask_Calculated;
+	uint32_t ScratchpadL2Mask16_Calculated;
+	uint32_t ScratchpadL3Mask_Calculated;
+	uint32_t ScratchpadL3Mask64_Calculated;
+
+	uint32_t ConditionMask_Calculated;
+
+	int CEIL_IADD_RS;
+	int CEIL_IADD_M;
+	int CEIL_ISUB_R;
+	int CEIL_ISUB_M;
+	int CEIL_IMUL_R;
+	int CEIL_IMUL_M;
+	int CEIL_IMULH_R;
+	int CEIL_IMULH_M;
+	int CEIL_ISMULH_R;
+	int CEIL_ISMULH_M;
+	int CEIL_IMUL_RCP;
+	int CEIL_INEG_R;
+	int CEIL_IXOR_R;
+	int CEIL_IXOR_M;
+	int CEIL_IROR_R;
+	int CEIL_IROL_R;
+	int CEIL_ISWAP_R;
+	int CEIL_FSWAP_R;
+	int CEIL_FADD_R;
+	int CEIL_FADD_M;
+	int CEIL_FSUB_R;
+	int CEIL_FSUB_M;
+	int CEIL_FSCAL_R;
+	int CEIL_FMUL_R;
+	int CEIL_FDIV_M;
+	int CEIL_FSQRT_R;
+	int CEIL_CBRANCH;
+	int CEIL_CFROUND;
+	int CEIL_ISTORE;
+	int CEIL_NOP;
+};
+
+struct RandomX_ConfigurationMonero : public RandomX_ConfigurationBase {};
+struct RandomX_ConfigurationWownero : public RandomX_ConfigurationBase { RandomX_ConfigurationWownero(); };
+struct RandomX_ConfigurationLoki : public RandomX_ConfigurationBase { RandomX_ConfigurationLoki(); };
+
+extern RandomX_ConfigurationMonero RandomX_MoneroConfig;
+extern RandomX_ConfigurationWownero RandomX_WowneroConfig;
+extern RandomX_ConfigurationLoki RandomX_LokiConfig;
+
+extern RandomX_ConfigurationBase RandomX_CurrentConfig;
+
+template<typename T>
+void randomx_apply_config(const T& config)
+{
+	static_assert(sizeof(T) == sizeof(RandomX_ConfigurationBase), "Invalid RandomX configuration struct size");
+	static_assert(std::is_base_of<RandomX_ConfigurationBase, T>::value, "Incompatible RandomX configuration struct");
+	RandomX_CurrentConfig = config;
+	RandomX_CurrentConfig.Apply();
+}
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
-RANDOMX_EXPORT void randomx_apply_config(const RandomX_Configuration* config);
 
 /**
  * Creates a randomx_cache structure and allocates memory for RandomX Cache.

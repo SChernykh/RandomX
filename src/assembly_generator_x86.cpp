@@ -549,12 +549,12 @@ namespace randomx {
 	void AssemblyGeneratorX86::h_CBRANCH(Instruction& instr, int i) {
 		int reg = instr.dst;
 		int target = registerUsage[reg] + 1;
-		int shift = instr.getModCond() + ConditionOffset;
+		int shift = instr.getModCond() + RandomX_CurrentConfig.JumpOffset;
 		int32_t imm = instr.getImm32() | (1L << shift);
-		if (ConditionOffset > 0 || shift > 0)
+		if (RandomX_CurrentConfig.JumpOffset > 0 || shift > 0)
 			imm &= ~(1L << (shift - 1));
 		asmCode << "\tadd " << regR[reg] << ", " << imm << std::endl;
-		asmCode << "\ttest " << regR[reg] << ", " << (ConditionMask << shift) << std::endl;
+		asmCode << "\ttest " << regR[reg] << ", " << (RandomX_CurrentConfig.ConditionMask_Calculated << shift) << std::endl;
 		asmCode << "\tjz randomx_isn_" << target << std::endl;
 		//mark all registers as used
 		for (unsigned j = 0; j < RegistersCount; ++j) {
@@ -573,39 +573,5 @@ namespace randomx {
 		tracenop(instr);
 	}
 
-#include "instruction_weights.hpp"
-#define INST_HANDLE(x) REPN(&AssemblyGeneratorX86::h_##x, WT(x))
-
-	InstructionGenerator AssemblyGeneratorX86::engine[256] = {
-		INST_HANDLE(IADD_RS)
-		INST_HANDLE(IADD_M)
-		INST_HANDLE(ISUB_R)
-		INST_HANDLE(ISUB_M)
-		INST_HANDLE(IMUL_R)
-		INST_HANDLE(IMUL_M)
-		INST_HANDLE(IMULH_R)
-		INST_HANDLE(IMULH_M)
-		INST_HANDLE(ISMULH_R)
-		INST_HANDLE(ISMULH_M)
-		INST_HANDLE(IMUL_RCP)
-		INST_HANDLE(INEG_R)
-		INST_HANDLE(IXOR_R)
-		INST_HANDLE(IXOR_M)
-		INST_HANDLE(IROR_R)
-		INST_HANDLE(IROL_R)
-		INST_HANDLE(ISWAP_R)
-		INST_HANDLE(FSWAP_R)
-		INST_HANDLE(FADD_R)
-		INST_HANDLE(FADD_M)
-		INST_HANDLE(FSUB_R)
-		INST_HANDLE(FSUB_M)
-		INST_HANDLE(FSCAL_R)
-		INST_HANDLE(FMUL_R)
-		INST_HANDLE(FDIV_M)
-		INST_HANDLE(FSQRT_R)
-		INST_HANDLE(CBRANCH)
-		INST_HANDLE(CFROUND)
-		INST_HANDLE(ISTORE)
-		INST_HANDLE(NOP)
-	};
+	InstructionGenerator AssemblyGeneratorX86::engine[256] = {};
 }

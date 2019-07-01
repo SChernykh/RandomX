@@ -59,7 +59,7 @@ namespace randomx {
 	template<class Allocator>
 	void deallocCache(randomx_cache* cache) {
 		if (cache->memory != nullptr)
-			Allocator::freeMemory(cache->memory, RandomX_CurrentConfig.ArgonMemory * randomx::ArgonBlockSize);
+			Allocator::freeMemory(cache->memory, RANDOMX_CACHE_MAX_SIZE);
 		if (cache->jit != nullptr)
 			delete cache->jit;
 	}
@@ -121,7 +121,7 @@ namespace randomx {
 
 		cache->reciprocalCache.clear();
 		randomx::Blake2Generator gen(key, keySize);
-		for (int i = 0; i < RANDOMX_CACHE_ACCESSES; ++i) {
+		for (int i = 0; i < RandomX_CurrentConfig.CacheAccesses; ++i) {
 			randomx::generateSuperscalar(cache->programs[i], gen);
 			for (unsigned j = 0; j < cache->programs[i].getSize(); ++j) {
 				auto& instr = cache->programs[i](j);
@@ -166,7 +166,7 @@ namespace randomx {
 		rl[5] = rl[0] ^ superscalarAdd5;
 		rl[6] = rl[0] ^ superscalarAdd6;
 		rl[7] = rl[0] ^ superscalarAdd7;
-		for (unsigned i = 0; i < RANDOMX_CACHE_ACCESSES; ++i) {
+		for (unsigned i = 0; i < RandomX_CurrentConfig.CacheAccesses; ++i) {
 			mixBlock = getMixBlock(registerValue, cache->memory);
 			rx_prefetch_nta(mixBlock);
 			SuperscalarProgram& prog = cache->programs[i];

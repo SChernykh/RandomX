@@ -212,14 +212,14 @@ namespace randomx {
 
 	void JitCompilerX86::generateProgram(Program& prog, ProgramConfiguration& pcfg) {
 		generateProgramPrologue(prog, pcfg);
-		memcpy(code + codePos, codeReadDataset, readDatasetSize);
+		memcpy(code + codePos, RandomX_CurrentConfig.codeReadDatasetTweaked, readDatasetSize);
 		codePos += readDatasetSize;
 		generateProgramEpilogue(prog);
 	}
 
 	void JitCompilerX86::generateProgramLight(Program& prog, ProgramConfiguration& pcfg, uint32_t datasetOffset) {
 		generateProgramPrologue(prog, pcfg);
-		emit(codeReadDatasetLightSshInit, readDatasetLightInitSize);
+		emit(RandomX_CurrentConfig.codeReadDatasetLightSshInitTweaked, readDatasetLightInitSize);
 		emit(ADD_EBX_I);
 		emit32(datasetOffset / CacheLineSize);
 		emitByte(CALL);
@@ -232,14 +232,14 @@ namespace randomx {
 	void JitCompilerX86::generateSuperscalarHash(SuperscalarProgram(&programs)[N], std::vector<uint64_t> &reciprocalCache) {
 		memcpy(code + superScalarHashOffset, codeShhInit, codeSshInitSize);
 		codePos = superScalarHashOffset + codeSshInitSize;
-		for (unsigned j = 0; j < N; ++j) {
+		for (unsigned j = 0; j < RandomX_CurrentConfig.CacheAccesses; ++j) {
 			SuperscalarProgram& prog = programs[j];
 			for (unsigned i = 0; i < prog.getSize(); ++i) {
 				Instruction& instr = prog(i);
 				generateSuperscalarCode(instr, reciprocalCache);
 			}
 			emit(codeShhLoad, codeSshLoadSize);
-			if (j < N - 1) {
+			if (j < RandomX_CurrentConfig.CacheAccesses - 1) {
 				emit(REX_MOV_RR64);
 				emitByte(0xd8 + prog.getAddressRegister());
 				emit(RandomX_CurrentConfig.codeShhPrefetchTweaked, codeSshPrefetchSize);
@@ -258,7 +258,7 @@ namespace randomx {
 	}
 
 	template
-		void JitCompilerX86::generateSuperscalarHash(SuperscalarProgram(&programs)[RANDOMX_CACHE_ACCESSES], std::vector<uint64_t> &reciprocalCache);
+	void JitCompilerX86::generateSuperscalarHash(SuperscalarProgram(&programs)[RANDOMX_CACHE_MAX_ACCESSES], std::vector<uint64_t> &reciprocalCache);
 
 	void JitCompilerX86::generateDatasetInitCode() {
 		memcpy(code, codeDatasetInit, datasetInitSize);
@@ -275,7 +275,7 @@ namespace randomx {
 		emitByte(0xc0 + pcfg.readReg0);
 		emit(REX_XOR_RAX_R64);
 		emitByte(0xc0 + pcfg.readReg1);
-		memcpy(code + codePos, codeLoopLoad, loopLoadSize);
+		memcpy(code + codePos, RandomX_CurrentConfig.codeLoopLoadTweaked, loopLoadSize);
 		codePos += loopLoadSize;
 		for (unsigned i = 0; i < prog.getSize(); ++i) {
 			Instruction& instr = prog(i);
@@ -742,14 +742,14 @@ namespace randomx {
 		int target = registerUsage[reg] + 1;
 		emit(REX_ADD_I);
 		emitByte(0xc0 + reg);
-		int shift = instr.getModCond() + ConditionOffset;
+		int shift = instr.getModCond() + RandomX_CurrentConfig.JumpOffset;
 		uint32_t imm = instr.getImm32() | (1UL << shift);
-		if (ConditionOffset > 0 || shift > 0)
+		if (RandomX_CurrentConfig.JumpOffset > 0 || shift > 0)
 			imm &= ~(1UL << (shift - 1));
 		emit32(imm);
 		emit(REX_TEST);
 		emitByte(0xc0 + reg);
-		emit32(ConditionMask << shift);
+		emit32(RandomX_CurrentConfig.ConditionMask_Calculated << shift);
 		emit(JZ);
 		emit32(instructionOffsets[target] - (codePos + 4));
 		//mark all registers as used
@@ -769,40 +769,6 @@ namespace randomx {
 		emit(NOP1);
 	}
 
-#include "instruction_weights.hpp"
-#define INST_HANDLE(x) REPN(&JitCompilerX86::h_##x, WT(x))
-
-	InstructionGeneratorX86 JitCompilerX86::engine[256] = {
-		INST_HANDLE(IADD_RS)
-		INST_HANDLE(IADD_M)
-		INST_HANDLE(ISUB_R)
-		INST_HANDLE(ISUB_M)
-		INST_HANDLE(IMUL_R)
-		INST_HANDLE(IMUL_M)
-		INST_HANDLE(IMULH_R)
-		INST_HANDLE(IMULH_M)
-		INST_HANDLE(ISMULH_R)
-		INST_HANDLE(ISMULH_M)
-		INST_HANDLE(IMUL_RCP)
-		INST_HANDLE(INEG_R)
-		INST_HANDLE(IXOR_R)
-		INST_HANDLE(IXOR_M)
-		INST_HANDLE(IROR_R)
-		INST_HANDLE(IROL_R)
-		INST_HANDLE(ISWAP_R)
-		INST_HANDLE(FSWAP_R)
-		INST_HANDLE(FADD_R)
-		INST_HANDLE(FADD_M)
-		INST_HANDLE(FSUB_R)
-		INST_HANDLE(FSUB_M)
-		INST_HANDLE(FSCAL_R)
-		INST_HANDLE(FMUL_R)
-		INST_HANDLE(FDIV_M)
-		INST_HANDLE(FSQRT_R)
-		INST_HANDLE(CBRANCH)
-		INST_HANDLE(CFROUND)
-		INST_HANDLE(ISTORE)
-		INST_HANDLE(NOP)
-	};
+	InstructionGeneratorX86 JitCompilerX86::engine[256] = {};
 
 }

@@ -78,7 +78,7 @@ void randomx_vm::initialize() {
 	store64(&reg.a[2].hi, randomx::getSmallPositiveFloatBits(program.getEntropy(5)));
 	store64(&reg.a[3].lo, randomx::getSmallPositiveFloatBits(program.getEntropy(6)));
 	store64(&reg.a[3].hi, randomx::getSmallPositiveFloatBits(program.getEntropy(7)));
-	mem.ma = program.getEntropy(8) & randomx::CacheLineAlignMask;
+	mem.ma = program.getEntropy(8) & CacheLineAlignMask;
 	mem.mx = program.getEntropy(10);
 	auto addressRegisters = program.getEntropy(12);
 	config.readReg0 = 0 + (addressRegisters & 1);
@@ -88,7 +88,7 @@ void randomx_vm::initialize() {
 	config.readReg2 = 4 + (addressRegisters & 1);
 	addressRegisters >>= 1;
 	config.readReg3 = 6 + (addressRegisters & 1);
-	datasetOffset = (program.getEntropy(13) % (randomx::DatasetExtraItems + 1)) * randomx::CacheLineSize;
+	datasetOffset = (program.getEntropy(13) % (DatasetExtraItems + 1)) * randomx::CacheLineSize;
 	store64(&config.eMask[0], randomx::getFloatMask(program.getEntropy(14)));
 	store64(&config.eMask[1], randomx::getFloatMask(program.getEntropy(15)));
 }
@@ -99,7 +99,7 @@ namespace randomx {
 
 	template<class Allocator, bool softAes>
 	VmBase<Allocator, softAes>::~VmBase() {
-		Allocator::freeMemory(scratchpad, ScratchpadSize);
+		Allocator::freeMemory(scratchpad, RANDOMX_SCRATCHPAD_L3_MAX_SIZE);
 	}
 
 	template<class Allocator, bool softAes>
@@ -111,7 +111,7 @@ namespace randomx {
 			tmp = rx_aesenc_vec_i128(tmp, tmp);
 			rx_store_vec_i128((rx_vec_i128*)&aesDummy, tmp);
 		}
-		scratchpad = (uint8_t*)Allocator::allocMemory(ScratchpadSize);
+		scratchpad = (uint8_t*)Allocator::allocMemory(RANDOMX_SCRATCHPAD_L3_MAX_SIZE);
 	}
 
 	template<class Allocator, bool softAes>

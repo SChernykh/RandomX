@@ -64,7 +64,7 @@ namespace randomx {
 			return code;
 		}
 		size_t getCodeSize();
-	private:
+
 		static InstructionGeneratorX86 engine[256];
 		std::vector<int32_t> instructionOffsets;
 		int registerUsage[RegistersCount];

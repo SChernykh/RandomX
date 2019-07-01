@@ -124,10 +124,7 @@
       </AdditionalOptions>
       <StackReserveSize>4194304</StackReserveSize>
     </Link>
-    <PreBuildEvent>
-      <Command>powershell -ExecutionPolicy Bypass -File .\h2inc.ps1 ..\src\configuration.h &gt; ..\src\asm\configuration.asm
-SET ERRORLEVEL = 0</Command>
-    </PreBuildEvent>
+    <PreBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\allocator.cpp" />
@@ -154,7 +151,10 @@ SET ERRORLEVEL = 0</Command>
     <ClCompile Include="..\src\virtual_memory.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="..\src\jit_compiler_x86_static.asm" />
+    <MASM Include="..\src\jit_compiler_x86_static.asm">
+      <EnableAssemblyGeneratedCodeListing Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</EnableAssemblyGeneratedCodeListing>
+      <AssembledCodeListingFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">jit_compiler_x86_static.lst</AssembledCodeListingFile>
+    </MASM>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\allocator.hpp" />

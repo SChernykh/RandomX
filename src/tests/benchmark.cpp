@@ -157,8 +157,8 @@ int main(int argc, char** argv) {
 	AtomicHash result;
 	std::vector<randomx_vm*> vms;
 	std::vector<std::thread> threads;
-	randomx_dataset* dataset;
-	randomx_cache* cache;
+	randomx_dataset* dataset = nullptr;
+	randomx_cache* cache = nullptr;
 	randomx_flags flags = RANDOMX_FLAG_DEFAULT;
 
 	if (miningMode) {
@@ -202,7 +202,9 @@ int main(int argc, char** argv) {
 		std::cout << " (" << initThreadCount << " thread" << (initThreadCount > 1 ? "s)" : ")");
 	std::cout << " ..." << std::endl;
 
-	randomx_apply_config(&RandomX_DefaultConfig);
+	randomx_apply_config(RandomX_MoneroConfig);
+	//randomx_apply_config(RandomX_WowneroConfig);
+	//randomx_apply_config(RandomX_LokiConfig);
 
 	try {
 		if (jit && !RANDOMX_HAVE_COMPILER) {

@@ -578,7 +578,7 @@ namespace randomx {
 
 	const SuperscalarInstruction SuperscalarInstruction::Null = SuperscalarInstruction(&SuperscalarInstructionInfo::NOP);
 
-	constexpr int CYCLE_MAP_SIZE = RANDOMX_SUPERSCALAR_LATENCY + 4;
+	constexpr int CYCLE_MAP_SIZE = RANDOMX_SUPERSCALAR_MAX_LATENCY + 4;
 	constexpr int LOOK_FORWARD_CYCLES = 4;
 	constexpr int MAX_THROWAWAY_COUNT = 256;
 
@@ -586,7 +586,7 @@ namespace randomx {
 	static int scheduleUop(ExecutionPort::type uop, ExecutionPort::type(&portBusy)[CYCLE_MAP_SIZE][3], int cycle) {
 		//The scheduling here is done optimistically by checking port availability in order P5 -> P0 -> P1 to not overload
 		//port P1 (multiplication) by instructions that can go to any port.
-		for (; cycle < CYCLE_MAP_SIZE; ++cycle) {
+		for (; cycle < RandomX_CurrentConfig.SuperscalarLatency + 4; ++cycle) {
 			if ((uop & ExecutionPort::P5) != 0 && !portBusy[cycle][2]) {
 				if (commit) {
 					if (trace) std::cout << "; P5 at cycle " << cycle << std::endl;
@@ -631,7 +631,7 @@ namespace randomx {
 		}
 		else {
 			//macro-ops with 2 uOPs are scheduled conservatively by requiring both uOPs to execute in the same cycle
-			for (; cycle < CYCLE_MAP_SIZE; ++cycle) {
+			for (; cycle < RandomX_CurrentConfig.SuperscalarLatency + 4; ++cycle) {
 
 				int cycle1 = scheduleUop<false>(mop.getUop1(), portBusy, cycle);
 				int cycle2 = scheduleUop<false>(mop.getUop2(), portBusy, cycle);
@@ -674,7 +674,7 @@ namespace randomx {
 		//Since a decode cycle produces on average 3.45 macro-ops and there are only 3 ALU ports, execution ports are always
 		//saturated first. The cycle limit is present only to guarantee loop termination.
 		//Program size is limited to SuperscalarMaxSize instructions.
-		for (decodeCycle = 0; decodeCycle < RANDOMX_SUPERSCALAR_LATENCY && !portsSaturated && programSize < SuperscalarMaxSize; ++decodeCycle) {
+		for (decodeCycle = 0; decodeCycle < RandomX_CurrentConfig.SuperscalarLatency && !portsSaturated && programSize < 3 * RandomX_CurrentConfig.SuperscalarLatency + 2; ++decodeCycle) {
 
 			//select a decode configuration
 			decodeBuffer = decodeBuffer->fetchNext(currentInstruction.getType(), decodeCycle, mulCount, gen);
@@ -688,7 +688,7 @@ namespace randomx {
 
 				//if we have issued all macro-ops for the current RandomX instruction, create a new instruction
 				if (macroOpIndex >= currentInstruction.getInfo().getSize()) {
-					if (portsSaturated || programSize >= SuperscalarMaxSize)
+					if (portsSaturated || programSize >= 3 * RandomX_CurrentConfig.SuperscalarLatency + 2)
 						break;
 					//select an instruction so that the first macro-op fits into the current slot
 					currentInstruction.createForSlot(gen, decodeBuffer->getCounts()[bufferIndex], decodeBuffer->getIndex(), decodeBuffer->getSize() == bufferIndex + 1, bufferIndex == 0);
@@ -782,7 +782,7 @@ namespace randomx {
 				macroOpCount++;
 
 				//terminating condition
-				if (scheduleCycle >= RANDOMX_SUPERSCALAR_LATENCY) {
+				if (scheduleCycle >= RandomX_CurrentConfig.SuperscalarLatency) {
 					portsSaturated = true;
 				}
 				cycle = topCycle;
@@ -836,7 +836,7 @@ namespace randomx {
 		if (INFO) std::cout << "; (* = in use, _ = idle)" << std::endl;
 
 		int portCycles = 0;
-		for (int i = 0; i < CYCLE_MAP_SIZE; ++i) {
+		for (int i = 0; i < RandomX_Config.SuperscalarLatency + 4; ++i) {
 			std::cout << "; " << std::setw(3) << i << " ";
 			for (int j = 0; j < 3; ++j) {
 				std::cout << (portBusy[i][j] ? '*' : '_');

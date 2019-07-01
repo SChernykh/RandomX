@@ -27,6 +27,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "soft_aes.h"
+#include "randomx.h"
 
 #define AES_HASH_1R_STATE0 0xd7983aad, 0xcc82db47, 0x9fa856de, 0x92b52c0d
 #define AES_HASH_1R_STATE1 0xace78057, 0xf59e125a, 0x15c7b798, 0x338d996e
@@ -157,15 +158,6 @@ void fillAes1Rx4(void *state, size_t outputSize, void *buffer) {
 template void fillAes1Rx4<true>(void *state, size_t outputSize, void *buffer);
 template void fillAes1Rx4<false>(void *state, size_t outputSize, void *buffer);
 
-#define AES_GEN_4R_KEY0 0x99e5d23f, 0x2f546d2b, 0xd1833ddb, 0x6421aadd
-#define AES_GEN_4R_KEY1 0xa5dfcde5, 0x06f79d53, 0xb6913f55, 0xb20e3450
-#define AES_GEN_4R_KEY2 0x171c02bf, 0x0aa4679f, 0x515e7baf, 0x5c3ed904
-#define AES_GEN_4R_KEY3 0xd8ded291, 0xcd673785, 0xe78f5d08, 0x85623763
-#define AES_GEN_4R_KEY4 0x229effb4, 0x3d518b6d, 0xe3d6a7a6, 0xb5826f73
-#define AES_GEN_4R_KEY5 0xb272b7d2, 0xe9024d4e, 0x9c10b3d9, 0xc7566bf3
-#define AES_GEN_4R_KEY6 0xf63befa7, 0x2ba9660a, 0xf765a38b, 0xf273c9e7
-#define AES_GEN_4R_KEY7 0xc0b0762d, 0x0c06d1fd, 0x915839de, 0x7a7cd609
-
 template<bool softAes>
 void fillAes4Rx4(void *state, size_t outputSize, void *buffer) {
 	const uint8_t* outptr = (uint8_t*)buffer;
@@ -174,14 +166,14 @@ void fillAes4Rx4(void *state, size_t outputSize, void *buffer) {
 	rx_vec_i128 state0, state1, state2, state3;
 	rx_vec_i128 key0, key1, key2, key3, key4, key5, key6, key7;
 
-	key0 = rx_set_int_vec_i128(AES_GEN_4R_KEY0);
-	key1 = rx_set_int_vec_i128(AES_GEN_4R_KEY1);
-	key2 = rx_set_int_vec_i128(AES_GEN_4R_KEY2);
-	key3 = rx_set_int_vec_i128(AES_GEN_4R_KEY3);
-	key4 = rx_set_int_vec_i128(AES_GEN_4R_KEY4);
-	key5 = rx_set_int_vec_i128(AES_GEN_4R_KEY5);
-	key6 = rx_set_int_vec_i128(AES_GEN_4R_KEY6);
-	key7 = rx_set_int_vec_i128(AES_GEN_4R_KEY7);
+	key0 = RandomX_CurrentConfig.fillAes4Rx4_Key[0];
+	key1 = RandomX_CurrentConfig.fillAes4Rx4_Key[1];
+	key2 = RandomX_CurrentConfig.fillAes4Rx4_Key[2];
+	key3 = RandomX_CurrentConfig.fillAes4Rx4_Key[3];
+	key4 = RandomX_CurrentConfig.fillAes4Rx4_Key[4];
+	key5 = RandomX_CurrentConfig.fillAes4Rx4_Key[5];
+	key6 = RandomX_CurrentConfig.fillAes4Rx4_Key[6];
+	key7 = RandomX_CurrentConfig.fillAes4Rx4_Key[7];
 
 	state0 = rx_load_vec_i128((rx_vec_i128*)state + 0);
 	state1 = rx_load_vec_i128((rx_vec_i128*)state + 1);
