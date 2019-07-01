@@ -37,8 +37,6 @@ src/soft_aes.cpp
 src/virtual_memory.cpp
 src/vm_interpreted.cpp
 src/allocator.cpp
-src/assembly_generator_x86.cpp
-src/instruction.cpp
 src/randomx.cpp
 src/superscalar.cpp
 src/vm_compiled.cpp
@@ -91,7 +89,12 @@ function(add_flag flag)
 endfunction()
 
 # x86-64
-if (ARCH_ID STREQUAL "x86_64" OR ARCH_ID STREQUAL "x86-64" OR ARCH_ID STREQUAL "amd64")
+if (CMAKE_C_COMPILER_ID MATCHES MSVC)
+  enable_language(ASM_MASM)
+  list(APPEND randomx_sources
+    src/jit_compiler_x86_static.asm
+    src/jit_compiler_x86.cpp)
+elseif (ARCH_ID STREQUAL "x86_64" OR ARCH_ID STREQUAL "x86-64" OR ARCH_ID STREQUAL "amd64")
   list(APPEND randomx_sources
     src/jit_compiler_x86_static.S
     src/jit_compiler_x86.cpp)
@@ -131,21 +134,6 @@ add_library(randomx
 set_property(TARGET randomx PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET randomx PROPERTY CXX_STANDARD 11)
 set_property(TARGET randomx PROPERTY CXX_STANDARD_REQUIRED ON)
-
-add_executable(randomx-tests
-  src/tests/tests.cpp)
-target_link_libraries(randomx-tests
-  PRIVATE randomx)
-set_property(TARGET randomx-tests PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET randomx-tests PROPERTY CXX_STANDARD 11)
-
-add_executable(randomx-codegen
-  src/tests/code-generator.cpp)
-target_link_libraries(randomx-codegen
-  PRIVATE randomx)
-
-set_property(TARGET randomx-codegen PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET randomx-codegen PROPERTY CXX_STANDARD 11)
 
 if (NOT Threads_FOUND AND UNIX AND NOT APPLE)
   set(THREADS_PREFER_PTHREAD_FLAG ON)

@@ -29,11 +29,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "configuration.h"
 #include "program.hpp"
 #include "blake2/endian.h"
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <stdexcept>
-#include <iomanip>
 #include "superscalar.hpp"
 #include "intrin_portable.h"
 #include "reciprocal.h"
@@ -617,7 +612,7 @@ namespace randomx {
 		//if this macro-op depends on the previous one, increase the starting cycle if needed
 		//this handles an explicit dependency chain in IMUL_RCP
 		if (mop.isDependent()) {
-			cycle = std::max(cycle, depCycle);
+			cycle = (cycle > depCycle) ? cycle : depCycle;
 		}
 		//move instructions are eliminated and don't need an execution unit
 		if (mop.isEliminated()) {
@@ -806,7 +801,7 @@ namespace randomx {
 			Instruction& instr = prog(i);
 			int latDst = prog.asicLatencies[instr.dst] + 1;
 			int latSrc = instr.dst != instr.src ? prog.asicLatencies[instr.src] + 1 : 0;
-			prog.asicLatencies[instr.dst] = std::max(latDst, latSrc);
+			prog.asicLatencies[instr.dst] = (latDst > latSrc) ? latDst : latSrc;
 		}
 
 		//address register is the register with the highest ASIC latency

@@ -26,12 +26,6 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <iostream>
-#include <iomanip>
-#include <stdexcept>
-#include <sstream>
-#include <cmath>
-#include <cfloat>
 #include "vm_interpreted.hpp"
 #include "dataset.hpp"
 #include "intrin_portable.h"

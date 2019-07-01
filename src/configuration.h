@@ -40,5 +40,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Increase it if some configs use larger dataset
 #define RANDOMX_DATASET_MAX_SIZE  2181038080
 
+// Increase it if some configs use larger programs
+#define RANDOMX_PROGRAM_MAX_SIZE       512
+
 // Increase it if some configs use larger scratchpad
 #define RANDOMX_SCRATCHPAD_L3_MAX_SIZE      2097152

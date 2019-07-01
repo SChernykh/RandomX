@@ -34,7 +34,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vm_compiled_light.hpp"
 #include "blake2/blake2.h"
 #include "jit_compiler_x86_static.hpp"
-#include "assembly_generator_x86.hpp"
 #include <cassert>
 
 RandomX_ConfigurationWownero::RandomX_ConfigurationWownero()
@@ -127,32 +126,39 @@ RandomX_ConfigurationBase::RandomX_ConfigurationBase()
 	fillAes4Rx4_Key[5] = rx_set_int_vec_i128(0xb272b7d2, 0xe9024d4e, 0x9c10b3d9, 0xc7566bf3);
 	fillAes4Rx4_Key[6] = rx_set_int_vec_i128(0xf63befa7, 0x2ba9660a, 0xf765a38b, 0xf273c9e7);
 	fillAes4Rx4_Key[7] = rx_set_int_vec_i128(0xc0b0762d, 0x0c06d1fd, 0x915839de, 0x7a7cd609);
-}
 
-void RandomX_ConfigurationBase::Apply()
-{
 #if defined(_M_X64) || defined(__x86_64__)
 	{
 		const uint8_t* a = (const uint8_t*)&randomx_sshash_prefetch;
 		const uint8_t* b = (const uint8_t*)&randomx_sshash_end;
 		memcpy(codeShhPrefetchTweaked, a, b - a);
-		*(uint32_t*)(codeShhPrefetchTweaked + 3) = ArgonMemory * 16 - 1;
 	}
-
-	const uint32_t DatasetBaseMask = DatasetBaseSize - RANDOMX_DATASET_ITEM_SIZE;
 	{
 		const uint8_t* a = (const uint8_t*)&randomx_program_read_dataset;
 		const uint8_t* b = (const uint8_t*)&randomx_program_read_dataset_sshash_init;
 		memcpy(codeReadDatasetTweaked, a, b - a);
-		*(uint32_t*)(codeReadDatasetTweaked + 7) = DatasetBaseMask;
-		*(uint32_t*)(codeReadDatasetTweaked + 23) = DatasetBaseMask;
 	}
 	{
 		const uint8_t* a = (const uint8_t*)&randomx_program_read_dataset_sshash_init;
 		const uint8_t* b = (const uint8_t*)&randomx_program_read_dataset_sshash_fin;
 		memcpy(codeReadDatasetLightSshInitTweaked, a, b - a);
-		*(uint32_t*)(codeReadDatasetLightSshInitTweaked + 59) = DatasetBaseMask;
 	}
+	{
+		const uint8_t* a = (const uint8_t*)&randomx_program_loop_load;
+		const uint8_t* b = (const uint8_t*)&randomx_program_start;
+		memcpy(codeLoopLoadTweaked, a, b - a);
+	}
+#endif
+}
+
+void RandomX_ConfigurationBase::Apply()
+{
+#if defined(_M_X64) || defined(__x86_64__)
+	*(uint32_t*)(codeShhPrefetchTweaked + 3) = ArgonMemory * 16 - 1;
+	const uint32_t DatasetBaseMask = DatasetBaseSize - RANDOMX_DATASET_ITEM_SIZE;
+	*(uint32_t*)(codeReadDatasetTweaked + 7) = DatasetBaseMask;
+	*(uint32_t*)(codeReadDatasetTweaked + 23) = DatasetBaseMask;
+	*(uint32_t*)(codeReadDatasetLightSshInitTweaked + 59) = DatasetBaseMask;
 #endif
 
 	CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(RANDOMX_DATASET_ITEM_SIZE - 1);
@@ -166,13 +172,8 @@ void RandomX_ConfigurationBase::Apply()
 	ScratchpadL3Mask64_Calculated = ((ScratchpadL3_Size / sizeof(uint64_t)) / 8 - 1) * 64;
 
 #if defined(_M_X64) || defined(__x86_64__)
-	{
-		const uint8_t* a = (const uint8_t*)&randomx_program_loop_load;
-		const uint8_t* b = (const uint8_t*)&randomx_program_start;
-		memcpy(codeLoopLoadTweaked, a, b - a);
-		*(uint32_t*)(codeLoopLoadTweaked + 4) = ScratchpadL3Mask64_Calculated;
-		*(uint32_t*)(codeLoopLoadTweaked + 50) = ScratchpadL3Mask64_Calculated;
-	}
+	*(uint32_t*)(codeLoopLoadTweaked + 4) = ScratchpadL3Mask64_Calculated;
+	*(uint32_t*)(codeLoopLoadTweaked + 50) = ScratchpadL3Mask64_Calculated;
 #endif
 
 	ConditionMask_Calculated = (1 << JumpBits) - 1;
@@ -188,11 +189,7 @@ void RandomX_ConfigurationBase::Apply()
 
 #define INST_HANDLE(x, prev) \
 	CEIL_##x = CEIL_##prev + RANDOMX_FREQ_##x; \
-	for (int i = 0; i < RANDOMX_FREQ_##x; ++i, ++k) \
-	{ \
-		randomx::AssemblyGeneratorX86::engine[k] = &randomx::AssemblyGeneratorX86::h_##x; \
-		JIT_HANDLE(x, prev); \
-	}
+	for (; k < CEIL_##x; ++k) { JIT_HANDLE(x, prev); }
 
 	INST_HANDLE(IADD_RS, NULL);
 	INST_HANDLE(IADD_M, IADD_RS);
