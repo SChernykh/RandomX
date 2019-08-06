@@ -114,7 +114,12 @@ void* allocLargePagesMemory(std::size_t bytes) {
 #elif defined(__FreeBSD__)
 	mem = mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_ALIGNED_SUPER, -1, 0);
 #else
-	mem = mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0);
+	if (bytes > (1U << 30)) {
+		mem = mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | (30 << MAP_HUGE_SHIFT) | MAP_POPULATE, -1, 0);
+	}
+	else {
+		mem = mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0);
+	}
 #endif
 	if (mem == MAP_FAILED)
 		throw std::runtime_error("allocLargePagesMemory - mmap failed");
