@@ -159,7 +159,6 @@ int main(int argc, char** argv) {
 	}
 
 	std::atomic<uint32_t> atomicNonce(0);
-	AtomicHash result;
 	std::vector<randomx_vm*> vms;
 	std::vector<std::thread> threads;
 	randomx_dataset* dataset;
@@ -231,22 +230,42 @@ int main(int argc, char** argv) {
 			if (dataset == nullptr) {
 				throw DatasetAllocException();
 			}
-			uint32_t datasetItemCount = randomx_dataset_item_count();
-			if (initThreadCount > 1) {
-				auto perThread = datasetItemCount / initThreadCount;
-				auto remainder = datasetItemCount % initThreadCount;
-				uint32_t startItem = 0;
-				for (int i = 0; i < initThreadCount; ++i) {
-					auto count = perThread + (i == initThreadCount - 1 ? remainder : 0);
-					threads.push_back(std::thread(&randomx_init_dataset, dataset, cache, startItem, count));
-					startItem += count;
-				}
-				for (unsigned i = 0; i < threads.size(); ++i) {
-					threads[i].join();
-				}
+
+			char* dataset_memory = reinterpret_cast<char*>(randomx_get_dataset_memory(dataset));
+			bool read_ok = false;
+
+			FILE* fp = fopen("dataset.bin", "rb");
+			if (fp)
+			{
+				read_ok = (fread(dataset_memory, 1, randomx::DatasetSize, fp) == randomx::DatasetSize);
+				fclose(fp);
 			}
-			else {
-				randomx_init_dataset(dataset, cache, 0, datasetItemCount);
+
+			if (!read_ok) {
+				uint32_t datasetItemCount = randomx_dataset_item_count();
+				if (initThreadCount > 1) {
+					auto perThread = datasetItemCount / initThreadCount;
+					auto remainder = datasetItemCount % initThreadCount;
+					uint32_t startItem = 0;
+					for (int i = 0; i < initThreadCount; ++i) {
+						auto count = perThread + (i == initThreadCount - 1 ? remainder : 0);
+						threads.push_back(std::thread(&randomx_init_dataset, dataset, cache, startItem, count));
+						startItem += count;
+					}
+					for (unsigned i = 0; i < threads.size(); ++i) {
+						threads[i].join();
+					}
+				}
+				else {
+					randomx_init_dataset(dataset, cache, 0, datasetItemCount);
+				}
+
+				fp = fopen("dataset.bin", "wb");
+				if (fp)
+				{
+					fwrite(dataset_memory, 1, randomx::DatasetSize, fp);
+					fclose(fp);
+				}
 			}
 			randomx_release_cache(cache);
 			cache = nullptr;
@@ -267,7 +286,10 @@ int main(int argc, char** argv) {
 			}
 			vms.push_back(vm);
 		}
-		std::cout << "Running benchmark (" << noncesCount << " nonces) ..." << std::endl;
+		for (int iter = 0; iter < 100; ++iter) {
+		std::cout << "Running benchmark (" << noncesCount << " nonces, iteration " << iter << ") ..." << std::endl;
+		atomicNonce = 0;
+		AtomicHash result;
 		sw.restart();
 		if (threadCount > 1) {
 			for (unsigned i = 0; i < vms.size(); ++i) {
@@ -282,18 +304,13 @@ int main(int argc, char** argv) {
 			for (unsigned i = 0; i < threads.size(); ++i) {
 				threads[i].join();
 			}
+			threads.clear();
 		}
 		else {
 			mine(vms[0], std::ref(atomicNonce), std::ref(result), noncesCount, 0);
 		}
 
 		double elapsed = sw.getElapsed();
-		for (unsigned i = 0; i < vms.size(); ++i)
-			randomx_destroy_vm(vms[i]);
-		if (miningMode)
-			randomx_release_dataset(dataset);
-		else
-			randomx_release_cache(cache);
 		std::cout << "Calculated result: ";
 		result.print(std::cout);
 		if (noncesCount == 1000 && seedValue == 0)
@@ -304,6 +321,13 @@ int main(int argc, char** argv) {
 		else {
 			std::cout << "Performance: " << noncesCount / elapsed << " hashes per second" << std::endl;
 		}
+		}
+		for (unsigned i = 0; i < vms.size(); ++i)
+			randomx_destroy_vm(vms[i]);
+		if (miningMode)
+			randomx_release_dataset(dataset);
+		else
+			randomx_release_cache(cache);
 	}
 	catch (MemoryException& e) {
 		std::cout << "ERROR: " << e.what() << std::endl;

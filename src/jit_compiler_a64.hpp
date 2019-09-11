@@ -32,21 +32,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <stdexcept>
 #include "common.hpp"
+#include "jit_compiler_a64_static.hpp"
 
 namespace randomx {
 
 	class Program;
 	class ProgramConfiguration;
 	class SuperscalarProgram;
+	class Instruction;
+
+	typedef void(JitCompilerA64::*InstructionGeneratorA64)(Instruction&, int, uint32_t&);
 
 	class JitCompilerA64 {
 	public:
-		JitCompilerA64() {
-			throw std::runtime_error("ARM64 JIT compiler is not implemented yet.");
-		}
-		void generateProgram(Program&, ProgramConfiguration&) {
+		JitCompilerA64();
+		~JitCompilerA64();
 
-		}
+		void generateProgram(Program&, ProgramConfiguration&);
+
 		void generateProgramLight(Program&, ProgramConfiguration&, uint32_t) {
 			
 		}
@@ -58,19 +61,31 @@ namespace randomx {
 
 		}
 		ProgramFunc* getProgramFunc() {
-			return nullptr;
+			return reinterpret_cast<ProgramFunc*>(code);
 		}
 		DatasetInitFunc* getDatasetInitFunc() {
 			return nullptr;
 		}
 		uint8_t* getCode() {
-			return nullptr;
+			return code;
 		}
-		size_t getCodeSize() {
-			return 0;
-		}
+		size_t getCodeSize();
+
 		void enableWriting() {}
 		void enableExecution() {}
-		void enableAll() {}
+		void enableAll();
+
+	private:
+		static InstructionGeneratorA64 engine[256];
+		uint8_t* code;
+
+		static void emit32(uint32_t val, uint8_t* code, uint32_t& codePos)
+		{
+			*(uint32_t*)(code + codePos) = val;
+			codePos += sizeof(val);
+		}
+
+		void h_IADD_RS(Instruction&, int, uint32_t&);
+		void h_NOP(Instruction&, int, uint32_t&);
 	};
 }

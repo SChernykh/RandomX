@@ -90,6 +90,7 @@ namespace randomx {
 	constexpr int StoreL3Condition = 14;
 
 	//Prevent some unsafe configurations.
+#define RANDOMX_UNSAFE 1
 #ifndef RANDOMX_UNSAFE
 	static_assert((uint64_t)ArgonBlockSize * RANDOMX_CACHE_ACCESSES * RANDOMX_ARGON_MEMORY + 33554432 >= (uint64_t)RANDOMX_DATASET_BASE_SIZE + RANDOMX_DATASET_EXTRA_SIZE, "Unsafe configuration: Memory-time tradeoffs");
 	static_assert((128 + RANDOMX_PROGRAM_SIZE * RANDOMX_FREQ_ISTORE / 256) * (RANDOMX_PROGRAM_COUNT * RANDOMX_PROGRAM_ITERATIONS) >= RANDOMX_SCRATCHPAD_L3, "Unsafe configuration: Insufficient Scratchpad writes");
@@ -119,7 +120,7 @@ namespace randomx {
 	class JitCompilerX86;
 	using JitCompiler = JitCompilerX86;
 #elif defined(__aarch64__)
-	#define RANDOMX_HAVE_COMPILER 0
+	#define RANDOMX_HAVE_COMPILER 1
 	class JitCompilerA64;
 	using JitCompiler = JitCompilerA64;
 #else
