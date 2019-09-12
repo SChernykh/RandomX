@@ -1,5 +1,6 @@
 /*
 Copyright (c) 2018-2019, tevador <tevador@gmail.com>
+Copyright (c) 2019, SChernykh    <https://github.com/SChernykh>
 
 All rights reserved.
 
@@ -85,7 +86,11 @@ namespace randomx {
 			codePos += sizeof(val);
 		}
 
+		void emitMovImmediate(uint32_t dst, uint32_t imm, uint8_t* code, uint32_t& codePos);
+		void emitAddImmediate(uint32_t dst, uint32_t src, uint32_t imm, uint8_t* code, uint32_t& codePos);
+
 		void h_IADD_RS(Instruction&, int, uint32_t&);
+		void h_IADD_M(Instruction&, int, uint32_t&);
 		void h_NOP(Instruction&, int, uint32_t&);
 	};
 }
