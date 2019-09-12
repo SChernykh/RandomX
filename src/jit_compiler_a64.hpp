@@ -91,6 +91,7 @@ namespace randomx {
 
 		void h_IADD_RS(Instruction&, int, uint32_t&);
 		void h_IADD_M(Instruction&, int, uint32_t&);
+		void h_ISUB_R(Instruction&, int, uint32_t&);
 		void h_NOP(Instruction&, int, uint32_t&);
 	};
 }

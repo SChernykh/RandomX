@@ -37,6 +37,7 @@ constexpr uint32_t B          = 0x14000000;
 constexpr uint32_t EOR        = 0xCA000000;
 constexpr uint32_t EOR32      = 0x4A000000;
 constexpr uint32_t ADD        = 0x8B000000;
+constexpr uint32_t SUB        = 0xCB000000;
 constexpr uint32_t MOVZ       = 0xD2800000;
 constexpr uint32_t MOVN       = 0x92800000;
 constexpr uint32_t MOVK       = 0xF2800000;
@@ -222,6 +223,26 @@ void JitCompilerA64::h_IADD_M(Instruction& instr, int i, uint32_t& codePos)
 
 	// add dst, dst, tmp_reg
 	emit32(ARMV8A::ADD | dst | (dst << 5) | (tmp_reg << 16), code, k);
+
+	codePos = k;
+}
+
+void JitCompilerA64::h_ISUB_R(Instruction& instr, int i, uint32_t& codePos)
+{
+	uint32_t k = codePos;
+
+	const uint32_t src = IntRegMap[instr.src];
+	const uint32_t dst = IntRegMap[instr.dst];
+
+	if (src != dst)
+	{
+		// sub dst, dst, src
+		emit32(ARMV8A::SUB | dst | (dst << 5) | (src << 16), code, k);
+	}
+	else
+	{
+		emitAddImmediate(dst, dst, -instr.getImm32(), code, k);
+	}
 
 	codePos = k;
 }
