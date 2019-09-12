@@ -79,6 +79,7 @@ namespace randomx {
 	private:
 		static InstructionGeneratorA64 engine[256];
 		uint8_t* code;
+		uint32_t literalPos;
 
 		static void emit32(uint32_t val, uint8_t* code, uint32_t& codePos)
 		{
@@ -89,9 +90,27 @@ namespace randomx {
 		void emitMovImmediate(uint32_t dst, uint32_t imm, uint8_t* code, uint32_t& codePos);
 		void emitAddImmediate(uint32_t dst, uint32_t src, uint32_t imm, uint8_t* code, uint32_t& codePos);
 
+		template<uint32_t tmp_reg>
+		void emitMemLoad(uint32_t dst, uint32_t src, Instruction& instr, uint8_t* code, uint32_t& codePos);
+
 		void h_IADD_RS(Instruction&, int, uint32_t&);
 		void h_IADD_M(Instruction&, int, uint32_t&);
 		void h_ISUB_R(Instruction&, int, uint32_t&);
+		void h_ISUB_M(Instruction&, int, uint32_t&);
+		void h_IMUL_R(Instruction&, int, uint32_t&);
+		void h_IMUL_M(Instruction&, int, uint32_t&);
+		void h_IMULH_R(Instruction&, int, uint32_t&);
+		void h_IMULH_M(Instruction&, int, uint32_t&);
+		void h_ISMULH_R(Instruction&, int, uint32_t&);
+		void h_ISMULH_M(Instruction&, int, uint32_t&);
+		void h_IMUL_RCP(Instruction&, int, uint32_t&);
+		void h_INEG_R(Instruction&, int, uint32_t&);
+		void h_IXOR_R(Instruction&, int, uint32_t&);
+		void h_IXOR_M(Instruction&, int, uint32_t&);
+		void h_IROR_R(Instruction&, int, uint32_t&);
+		void h_IROL_R(Instruction&, int, uint32_t&);
+		void h_ISWAP_R(Instruction&, int, uint32_t&);
+		void h_ISTORE(Instruction&, int, uint32_t&);
 		void h_NOP(Instruction&, int, uint32_t&);
 	};
 }

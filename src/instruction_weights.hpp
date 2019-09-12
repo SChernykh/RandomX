@@ -64,8 +64,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define REP33(x) REP32(x) x,
 #define REP40(x) REP32(x) REP8(x)
 #define REP64(x) REP32(x) REP32(x)
+#define REP120(x) REP64(x) REP32(x) REP24(x)
 #define REP128(x) REP32(x) REP32(x) REP32(x) REP32(x)
-#define REP217(x) REP128(x) REP64(x) REP25(x)
 #define REP232(x) REP128(x) REP40(x) REP40(x) REP24(x)
 #define REP256(x) REP128(x) REP128(x)
 #define REPNX(x,N) REP##N(x)
