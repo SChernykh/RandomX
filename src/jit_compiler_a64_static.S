@@ -137,7 +137,7 @@ randomx_program_aarch64:
 	ldr	q30, [x0, 64]
 
 	# Load scale mask
-	mov	x21, 0x81f0000000000000
+	mov	x21, 0x80f0000000000000
 	ins	v31.d[0], x21
 	ins	v31.d[1], x21
 

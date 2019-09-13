@@ -51,6 +51,13 @@ constexpr uint32_t LDR_LITERAL = 0x58000000;
 constexpr uint32_t ROR         = 0x9AC02C00;
 constexpr uint32_t ROR_IMM     = 0x93C00000;
 constexpr uint32_t MOV_REG     = 0xAA0003E0;
+constexpr uint32_t MOV_VREG_EL = 0x6E080400;
+constexpr uint32_t FADD        = 0x4E60D400;
+constexpr uint32_t FSUB        = 0x4EE0D400;
+constexpr uint32_t FEOR        = 0x6E201C00;
+constexpr uint32_t FMUL        = 0x6E60DC00;
+constexpr uint32_t FDIV        = 0x6E60FC00;
+constexpr uint32_t FSQRT       = 0x6EE1F800;
 
 }
 
@@ -215,6 +222,41 @@ void JitCompilerA64::emitMemLoad(uint32_t dst, uint32_t src, Instruction& instr,
 	codePos = k;
 }
 
+template<uint32_t tmp_reg_fp>
+void JitCompilerA64::emitMemLoadFP(uint32_t src, Instruction& instr, uint8_t* code, uint32_t& codePos)
+{
+	uint32_t k = codePos;
+
+	uint32_t imm = instr.getImm32();
+	constexpr uint32_t tmp_reg = 21;
+
+	imm &= instr.getModMem() ? (RANDOMX_SCRATCHPAD_L1 - 1) : (RANDOMX_SCRATCHPAD_L2 - 1);
+	emitAddImmediate(tmp_reg, src, imm, code, k);
+
+	constexpr uint32_t t = 0x927d0000 | tmp_reg | (tmp_reg << 5);
+	constexpr uint32_t andInstrL1 = t | ((Log2(RANDOMX_SCRATCHPAD_L1) - 4) << 10);
+	constexpr uint32_t andInstrL2 = t | ((Log2(RANDOMX_SCRATCHPAD_L2) - 4) << 10);
+
+	emit32(instr.getModMem() ? andInstrL1 : andInstrL2, code, k);
+
+	// add tmp_reg, x2, tmp_reg
+	emit32(ARMV8A::ADD | tmp_reg | (2 << 5) | (tmp_reg << 16), code, k);
+
+	// ldpsw tmp_reg, tmp_reg + 1, [tmp_reg]
+	emit32(0x69400000 | tmp_reg | (tmp_reg << 5) | ((tmp_reg + 1) << 10), code, k);
+
+	// ins tmp_reg_fp.d[0], tmp_reg
+	emit32(0x4E081C00 | tmp_reg_fp | (tmp_reg << 5), code, k);
+
+	// ins tmp_reg_fp.d[1], tmp_reg + 1
+	emit32(0x4E181C00 | tmp_reg_fp | ((tmp_reg + 1) << 5), code, k);
+
+	// scvtf tmp_reg_fp.2d, tmp_reg_fp.2d
+	emit32(0x4E61D800 | tmp_reg_fp | (tmp_reg_fp << 5), code, k);
+
+	codePos = k;
+}
+
 void JitCompilerA64::h_IADD_RS(Instruction& instr, int i, uint32_t& codePos)
 {
 	uint32_t k = codePos;
@@ -342,7 +384,7 @@ void JitCompilerA64::h_IMULH_M(Instruction& instr, int i, uint32_t& codePos)
 	constexpr uint32_t tmp_reg = 21;
 	emitMemLoad<tmp_reg>(dst, src, instr, code, k);
 
-	// sub dst, dst, tmp_reg
+	// umulh dst, dst, tmp_reg
 	emit32(ARMV8A::UMULH | dst | (dst << 5) | (tmp_reg << 16), code, k);
 
 	codePos = k;
@@ -355,7 +397,7 @@ void JitCompilerA64::h_ISMULH_R(Instruction& instr, int i, uint32_t& codePos)
 	const uint32_t src = IntRegMap[instr.src];
 	const uint32_t dst = IntRegMap[instr.dst];
 
-	// umulh dst, dst, src
+	// smulh dst, dst, src
 	emit32(ARMV8A::SMULH | dst | (dst << 5) | (src << 16), code, k);
 
 	codePos = k;
@@ -371,7 +413,7 @@ void JitCompilerA64::h_ISMULH_M(Instruction& instr, int i, uint32_t& codePos)
 	constexpr uint32_t tmp_reg = 21;
 	emitMemLoad<tmp_reg>(dst, src, instr, code, k);
 
-	// sub dst, dst, tmp_reg
+	// smulh dst, dst, tmp_reg
 	emit32(ARMV8A::SMULH | dst | (dst << 5) | (tmp_reg << 16), code, k);
 
 	codePos = k;
@@ -388,8 +430,13 @@ void JitCompilerA64::h_IMUL_RCP(Instruction& instr, int i, uint32_t& codePos)
 	constexpr uint32_t tmp_reg = 21;
 	const uint32_t dst = IntRegMap[instr.dst];
 
+	const uint64_t N = 1ULL << 63;
+	const uint64_t q = N / divisor;
+	const uint64_t r = N % divisor;
+	const uint64_t shift = 64 - __builtin_clzll(divisor);
+
 	literalPos -= sizeof(uint64_t);
-	*(uint64_t*)(code + literalPos) = randomx_reciprocal(divisor);
+	*(uint64_t*)(code + literalPos) = (q << shift) + ((r << shift) / divisor);
 
 	// ldr tmp_reg, reciprocal
 	const uint32_t offset = (literalPos - k) / 4;
@@ -503,6 +550,112 @@ void JitCompilerA64::h_ISWAP_R(Instruction& instr, int i, uint32_t& codePos)
 	emit32(ARMV8A::MOV_REG | src | (tmp_reg << 16), code, k);
 
 	codePos = k;
+}
+
+void JitCompilerA64::h_FSWAP_R(Instruction& instr, int i, uint32_t& codePos)
+{
+	uint32_t k = codePos;
+
+	const uint32_t dst = instr.dst + 16;
+
+	constexpr uint32_t tmp_reg = 28;
+	constexpr uint32_t src_index1 = 1 << 14;
+	constexpr uint32_t dst_index1 = 1 << 20;
+
+	emit32(ARMV8A::MOV_VREG_EL | tmp_reg | (dst << 5) | src_index1, code, k);
+	emit32(ARMV8A::MOV_VREG_EL | dst | (dst << 5) | dst_index1, code, k);
+	emit32(ARMV8A::MOV_VREG_EL | dst | (tmp_reg << 5), code, k);
+
+	codePos = k;
+}
+
+void JitCompilerA64::h_FADD_R(Instruction& instr, int i, uint32_t& codePos)
+{
+	const uint32_t src = (instr.src % 4) + 24;
+	const uint32_t dst = (instr.dst % 4) + 16;
+
+	emit32(ARMV8A::FADD | dst | (dst << 5) | (src << 16), code, codePos);
+}
+
+void JitCompilerA64::h_FADD_M(Instruction& instr, int i, uint32_t& codePos)
+{
+	uint32_t k = codePos;
+
+	const uint32_t src = IntRegMap[instr.src];
+	const uint32_t dst = (instr.dst % 4) + 16;
+
+	constexpr uint32_t tmp_reg_fp = 28;
+	emitMemLoadFP<tmp_reg_fp>(src, instr, code, k); 
+
+	emit32(ARMV8A::FADD | dst | (dst << 5) | (tmp_reg_fp << 16), code, k);
+
+	codePos = k;
+}
+
+void JitCompilerA64::h_FSUB_R(Instruction& instr, int i, uint32_t& codePos)
+{
+	const uint32_t src = (instr.src % 4) + 24;
+	const uint32_t dst = (instr.dst % 4) + 16;
+
+	emit32(ARMV8A::FSUB | dst | (dst << 5) | (src << 16), code, codePos);
+}
+
+void JitCompilerA64::h_FSUB_M(Instruction& instr, int i, uint32_t& codePos)
+{
+	uint32_t k = codePos;
+
+	const uint32_t src = IntRegMap[instr.src];
+	const uint32_t dst = (instr.dst % 4) + 16;
+
+	constexpr uint32_t tmp_reg_fp = 28;
+	emitMemLoadFP<tmp_reg_fp>(src, instr, code, k); 
+
+	emit32(ARMV8A::FSUB | dst | (dst << 5) | (tmp_reg_fp << 16), code, k);
+
+	codePos = k;
+}
+
+void JitCompilerA64::h_FSCAL_R(Instruction& instr, int i, uint32_t& codePos)
+{
+	const uint32_t dst = (instr.dst % 4) + 16;
+
+	emit32(ARMV8A::FEOR | dst | (dst << 5) | (31 << 16), code, codePos);
+}
+
+void JitCompilerA64::h_FMUL_R(Instruction& instr, int i, uint32_t& codePos)
+{
+	const uint32_t src = (instr.src % 4) + 24;
+	const uint32_t dst = (instr.dst % 4) + 20;
+
+	emit32(ARMV8A::FMUL | dst | (dst << 5) | (src << 16), code, codePos);
+}
+
+void JitCompilerA64::h_FDIV_M(Instruction& instr, int i, uint32_t& codePos)
+{
+	uint32_t k = codePos;
+
+	const uint32_t src = IntRegMap[instr.src];
+	const uint32_t dst = (instr.dst % 4) + 20;
+
+	constexpr uint32_t tmp_reg_fp = 28;
+	emitMemLoadFP<tmp_reg_fp>(src, instr, code, k); 
+
+	// and tmp_reg_fp, tmp_reg_fp, and_mask_reg
+	emit32(0x4E201C00 | tmp_reg_fp | (tmp_reg_fp << 5) | (29 << 16), code, k);
+
+	// orr tmp_reg_fp, tmp_reg_fp, or_mask_reg
+	emit32(0x4EA01C00 | tmp_reg_fp | (tmp_reg_fp << 5) | (30 << 16), code, k);
+
+	emit32(ARMV8A::FDIV | dst | (dst << 5) | (tmp_reg_fp << 16), code, k);
+
+	codePos = k;
+}
+
+void JitCompilerA64::h_FSQRT_R(Instruction& instr, int i, uint32_t& codePos)
+{
+	const uint32_t dst = (instr.dst % 4) + 20;
+
+	emit32(ARMV8A::FSQRT | dst | (dst << 5), code, codePos);
 }
 
 void JitCompilerA64::h_ISTORE(Instruction& instr, int i, uint32_t& codePos)

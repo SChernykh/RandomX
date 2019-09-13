@@ -93,6 +93,9 @@ namespace randomx {
 		template<uint32_t tmp_reg>
 		void emitMemLoad(uint32_t dst, uint32_t src, Instruction& instr, uint8_t* code, uint32_t& codePos);
 
+		template<uint32_t tmp_reg_fp>
+		void emitMemLoadFP(uint32_t src, Instruction& instr, uint8_t* code, uint32_t& codePos);
+
 		void h_IADD_RS(Instruction&, int, uint32_t&);
 		void h_IADD_M(Instruction&, int, uint32_t&);
 		void h_ISUB_R(Instruction&, int, uint32_t&);
@@ -110,6 +113,15 @@ namespace randomx {
 		void h_IROR_R(Instruction&, int, uint32_t&);
 		void h_IROL_R(Instruction&, int, uint32_t&);
 		void h_ISWAP_R(Instruction&, int, uint32_t&);
+		void h_FSWAP_R(Instruction&, int, uint32_t&);
+		void h_FADD_R(Instruction&, int, uint32_t&);
+		void h_FADD_M(Instruction&, int, uint32_t&);
+		void h_FSUB_R(Instruction&, int, uint32_t&);
+		void h_FSUB_M(Instruction&, int, uint32_t&);
+		void h_FSCAL_R(Instruction&, int, uint32_t&);
+		void h_FMUL_R(Instruction&, int, uint32_t&);
+		void h_FDIV_M(Instruction&, int, uint32_t&);
+		void h_FSQRT_R(Instruction&, int, uint32_t&);
 		void h_ISTORE(Instruction&, int, uint32_t&);
 		void h_NOP(Instruction&, int, uint32_t&);
 	};
