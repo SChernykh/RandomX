@@ -76,6 +76,7 @@ JitCompilerA64::JitCompilerA64()
 	: code((uint8_t*) allocMemoryPages(CodeSize))
 	, literalPos(InstructionsEnd)
 {
+	memset(reg_changed_offset, 0, sizeof(reg_changed_offset));
 	memcpy(code, (void*) randomx_program_aarch64, CodeSize);
 	enableAll();
 }
@@ -103,29 +104,32 @@ void JitCompilerA64::generateProgram(Program& program, ProgramConfiguration& con
 	codePos = PrologueSize;
 	literalPos = InstructionsEnd;
 
+	for (uint32_t i = 0; i < RegistersCount; ++i)
+		reg_changed_offset[i] = codePos;
+
 	for (uint32_t i = 0; i < program.getSize(); ++i)
 	{
 		Instruction& instr = program(i);
 		instr.src %= RegistersCount;
 		instr.dst %= RegistersCount;
-		(this->*engine[instr.opcode])(instr, i, codePos);
+		(this->*engine[instr.opcode])(instr, codePos);
 	}
 
 	// Update spMix2
-	// eor w11, config.readReg2, config.readReg3
-	emit32(ARMV8A::EOR32 | 11 | (IntRegMap[config.readReg2] << 5) | (IntRegMap[config.readReg3] << 16), code, codePos);
+	// eor w18, config.readReg2, config.readReg3
+	emit32(ARMV8A::EOR32 | 18 | (IntRegMap[config.readReg2] << 5) | (IntRegMap[config.readReg3] << 16), code, codePos);
 
 	// Jump back to the main loop
 	const uint32_t offset = (((uint8_t*)randomx_program_aarch64_vm_instructions_end) - ((uint8_t*)randomx_program_aarch64)) - codePos;
 	emit32(ARMV8A::B | (offset / 4), code, codePos);
 
-	// and w20, w20, CacheLineAlignMask
+	// and w18, w18, CacheLineAlignMask
 	codePos = (((uint8_t*)randomx_program_aarch64_cacheline_align_mask1) - ((uint8_t*)randomx_program_aarch64));
-	emit32(0x121A0000 | 20 | (20 << 5) | ((Log2(RANDOMX_DATASET_BASE_SIZE) - 7) << 10), code, codePos);
+	emit32(0x121A0000 | 18 | (18 << 5) | ((Log2(RANDOMX_DATASET_BASE_SIZE) - 7) << 10), code, codePos);
 
-	// and w20, w20, CacheLineAlignMask
+	// and w10, w10, CacheLineAlignMask
 	codePos = (((uint8_t*)randomx_program_aarch64_cacheline_align_mask2) - ((uint8_t*)randomx_program_aarch64));
-	emit32(0x121A0000 | 20 | (20 << 5) | ((Log2(RANDOMX_DATASET_BASE_SIZE) - 7) << 10), code, codePos);
+	emit32(0x121A0000 | 10 | (10 << 5) | ((Log2(RANDOMX_DATASET_BASE_SIZE) - 7) << 10), code, codePos);
 
 	// Update spMix1
 	// eor x10, config.readReg0, config.readReg1
@@ -274,7 +278,7 @@ void JitCompilerA64::emitMemLoadFP(uint32_t src, Instruction& instr, uint8_t* co
 	codePos = k;
 }
 
-void JitCompilerA64::h_IADD_RS(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_IADD_RS(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -288,10 +292,11 @@ void JitCompilerA64::h_IADD_RS(Instruction& instr, int i, uint32_t& codePos)
 	if (instr.dst == RegisterNeedsDisplacement)
 		emitAddImmediate(dst, dst, instr.getImm32(), code, k);
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_IADD_M(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_IADD_M(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -304,10 +309,11 @@ void JitCompilerA64::h_IADD_M(Instruction& instr, int i, uint32_t& codePos)
 	// add dst, dst, tmp_reg
 	emit32(ARMV8A::ADD | dst | (dst << 5) | (tmp_reg << 16), code, k);
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_ISUB_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_ISUB_R(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -324,10 +330,11 @@ void JitCompilerA64::h_ISUB_R(Instruction& instr, int i, uint32_t& codePos)
 		emitAddImmediate(dst, dst, -instr.getImm32(), code, k);
 	}
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_ISUB_M(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_ISUB_M(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -340,10 +347,11 @@ void JitCompilerA64::h_ISUB_M(Instruction& instr, int i, uint32_t& codePos)
 	// sub dst, dst, tmp_reg
 	emit32(ARMV8A::SUB | dst | (dst << 5) | (tmp_reg << 16), code, k);
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_IMUL_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_IMUL_R(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -359,10 +367,11 @@ void JitCompilerA64::h_IMUL_R(Instruction& instr, int i, uint32_t& codePos)
 	// mul dst, dst, src
 	emit32(ARMV8A::MUL | dst | (dst << 5) | (src << 16), code, k);
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_IMUL_M(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_IMUL_M(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -375,10 +384,11 @@ void JitCompilerA64::h_IMUL_M(Instruction& instr, int i, uint32_t& codePos)
 	// sub dst, dst, tmp_reg
 	emit32(ARMV8A::MUL | dst | (dst << 5) | (tmp_reg << 16), code, k);
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_IMULH_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_IMULH_R(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -388,10 +398,11 @@ void JitCompilerA64::h_IMULH_R(Instruction& instr, int i, uint32_t& codePos)
 	// umulh dst, dst, src
 	emit32(ARMV8A::UMULH | dst | (dst << 5) | (src << 16), code, k);
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_IMULH_M(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_IMULH_M(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -404,10 +415,11 @@ void JitCompilerA64::h_IMULH_M(Instruction& instr, int i, uint32_t& codePos)
 	// umulh dst, dst, tmp_reg
 	emit32(ARMV8A::UMULH | dst | (dst << 5) | (tmp_reg << 16), code, k);
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_ISMULH_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_ISMULH_R(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -417,10 +429,11 @@ void JitCompilerA64::h_ISMULH_R(Instruction& instr, int i, uint32_t& codePos)
 	// smulh dst, dst, src
 	emit32(ARMV8A::SMULH | dst | (dst << 5) | (src << 16), code, k);
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_ISMULH_M(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_ISMULH_M(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -433,10 +446,11 @@ void JitCompilerA64::h_ISMULH_M(Instruction& instr, int i, uint32_t& codePos)
 	// smulh dst, dst, tmp_reg
 	emit32(ARMV8A::SMULH | dst | (dst << 5) | (tmp_reg << 16), code, k);
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_IMUL_RCP(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_IMUL_RCP(Instruction& instr, uint32_t& codePos)
 {
 	const uint64_t divisor = instr.getImm32();
 	if (isZeroOrPowerOf2(divisor))
@@ -450,17 +464,25 @@ void JitCompilerA64::h_IMUL_RCP(Instruction& instr, int i, uint32_t& codePos)
 	constexpr uint64_t N = 1ULL << 63;
 	const uint64_t q = N / divisor;
 	const uint64_t r = N % divisor;
+#ifdef __GNUC__
 	const uint64_t shift = 64 - __builtin_clzll(divisor);
+#else
+	uint64_t shift = 32;
+	for (uint64_t k = 1U << 31; (k & divisor) == 0; k >>= 1)
+		--shift;
+#endif
 
 	const uint32_t literal_id = (InstructionsEnd - literalPos) / sizeof(uint64_t);
 
 	literalPos -= sizeof(uint64_t);
 	*(uint64_t*)(code + literalPos) = (q << shift) + ((r << shift) / divisor);
 
-	if (literal_id < 10)
+	if (literal_id < 13)
 	{
+		static constexpr uint32_t literal_regs[13] = { 30 << 16, 29 << 16, 28 << 16, 27 << 16, 26 << 16, 25 << 16, 24 << 16, 23 << 16, 22 << 16, 21 << 16, 20 << 16, 11 << 16, 0 };
+
 		// mul dst, dst, literal_reg
-		emit32(ARMV8A::MUL | dst | (dst << 5) | ((30 - literal_id) << 16), code, k);
+		emit32(ARMV8A::MUL | dst | (dst << 5) | literal_regs[literal_id], code, k);
 	}
 	else
 	{
@@ -472,18 +494,21 @@ void JitCompilerA64::h_IMUL_RCP(Instruction& instr, int i, uint32_t& codePos)
 		emit32(ARMV8A::MUL | dst | (dst << 5) | (tmp_reg << 16), code, k);
 	}
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_INEG_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_INEG_R(Instruction& instr, uint32_t& codePos)
 {
 	const uint32_t dst = IntRegMap[instr.dst];
 
 	// sub dst, xzr, dst
 	emit32(ARMV8A::SUB | dst | (31 << 5) | (dst << 16), code, codePos);
+
+	reg_changed_offset[instr.dst] = codePos;
 }
 
-void JitCompilerA64::h_IXOR_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_IXOR_R(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -499,10 +524,11 @@ void JitCompilerA64::h_IXOR_R(Instruction& instr, int i, uint32_t& codePos)
 	// eor dst, dst, src
 	emit32(ARMV8A::EOR | dst | (dst << 5) | (src << 16), code, k);
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_IXOR_M(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_IXOR_M(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -515,10 +541,11 @@ void JitCompilerA64::h_IXOR_M(Instruction& instr, int i, uint32_t& codePos)
 	// sub dst, dst, tmp_reg
 	emit32(ARMV8A::EOR | dst | (dst << 5) | (tmp_reg << 16), code, k);
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_IROR_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_IROR_R(Instruction& instr, uint32_t& codePos)
 {
 	const uint32_t src = IntRegMap[instr.src];
 	const uint32_t dst = IntRegMap[instr.dst];
@@ -533,9 +560,11 @@ void JitCompilerA64::h_IROR_R(Instruction& instr, int i, uint32_t& codePos)
 		// ror dst, dst, imm
 		emit32(ARMV8A::ROR_IMM | dst | (dst << 5) | ((instr.getImm32() & 63) << 10) | (dst << 16), code, codePos);
 	}
+
+	reg_changed_offset[instr.dst] = codePos;
 }
 
-void JitCompilerA64::h_IROL_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_IROL_R(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -558,10 +587,11 @@ void JitCompilerA64::h_IROL_R(Instruction& instr, int i, uint32_t& codePos)
 		emit32(ARMV8A::ROR_IMM | dst | (dst << 5) | ((-instr.getImm32() & 63) << 10) | (dst << 16), code, k);
 	}
 
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_ISWAP_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_ISWAP_R(Instruction& instr, uint32_t& codePos)
 {
 	const uint32_t src = IntRegMap[instr.src];
 	const uint32_t dst = IntRegMap[instr.dst];
@@ -576,27 +606,29 @@ void JitCompilerA64::h_ISWAP_R(Instruction& instr, int i, uint32_t& codePos)
 	emit32(ARMV8A::MOV_REG | dst | (src << 16), code, k);
 	emit32(ARMV8A::MOV_REG | src | (tmp_reg << 16), code, k);
 
+	reg_changed_offset[instr.src] = k;
+	reg_changed_offset[instr.dst] = k;
 	codePos = k;
 }
 
-void JitCompilerA64::h_FSWAP_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_FSWAP_R(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
 	const uint32_t dst = instr.dst + 16;
 
-	constexpr uint32_t tmp_reg = 28;
+	constexpr uint32_t tmp_reg_fp = 28;
 	constexpr uint32_t src_index1 = 1 << 14;
 	constexpr uint32_t dst_index1 = 1 << 20;
 
-	emit32(ARMV8A::MOV_VREG_EL | tmp_reg | (dst << 5) | src_index1, code, k);
+	emit32(ARMV8A::MOV_VREG_EL | tmp_reg_fp | (dst << 5) | src_index1, code, k);
 	emit32(ARMV8A::MOV_VREG_EL | dst | (dst << 5) | dst_index1, code, k);
-	emit32(ARMV8A::MOV_VREG_EL | dst | (tmp_reg << 5), code, k);
+	emit32(ARMV8A::MOV_VREG_EL | dst | (tmp_reg_fp << 5), code, k);
 
 	codePos = k;
 }
 
-void JitCompilerA64::h_FADD_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_FADD_R(Instruction& instr, uint32_t& codePos)
 {
 	const uint32_t src = (instr.src % 4) + 24;
 	const uint32_t dst = (instr.dst % 4) + 16;
@@ -604,7 +636,7 @@ void JitCompilerA64::h_FADD_R(Instruction& instr, int i, uint32_t& codePos)
 	emit32(ARMV8A::FADD | dst | (dst << 5) | (src << 16), code, codePos);
 }
 
-void JitCompilerA64::h_FADD_M(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_FADD_M(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -619,7 +651,7 @@ void JitCompilerA64::h_FADD_M(Instruction& instr, int i, uint32_t& codePos)
 	codePos = k;
 }
 
-void JitCompilerA64::h_FSUB_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_FSUB_R(Instruction& instr, uint32_t& codePos)
 {
 	const uint32_t src = (instr.src % 4) + 24;
 	const uint32_t dst = (instr.dst % 4) + 16;
@@ -627,7 +659,7 @@ void JitCompilerA64::h_FSUB_R(Instruction& instr, int i, uint32_t& codePos)
 	emit32(ARMV8A::FSUB | dst | (dst << 5) | (src << 16), code, codePos);
 }
 
-void JitCompilerA64::h_FSUB_M(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_FSUB_M(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -642,14 +674,14 @@ void JitCompilerA64::h_FSUB_M(Instruction& instr, int i, uint32_t& codePos)
 	codePos = k;
 }
 
-void JitCompilerA64::h_FSCAL_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_FSCAL_R(Instruction& instr, uint32_t& codePos)
 {
 	const uint32_t dst = (instr.dst % 4) + 16;
 
 	emit32(ARMV8A::FEOR | dst | (dst << 5) | (31 << 16), code, codePos);
 }
 
-void JitCompilerA64::h_FMUL_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_FMUL_R(Instruction& instr, uint32_t& codePos)
 {
 	const uint32_t src = (instr.src % 4) + 24;
 	const uint32_t dst = (instr.dst % 4) + 20;
@@ -657,7 +689,7 @@ void JitCompilerA64::h_FMUL_R(Instruction& instr, int i, uint32_t& codePos)
 	emit32(ARMV8A::FMUL | dst | (dst << 5) | (src << 16), code, codePos);
 }
 
-void JitCompilerA64::h_FDIV_M(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_FDIV_M(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -678,39 +710,57 @@ void JitCompilerA64::h_FDIV_M(Instruction& instr, int i, uint32_t& codePos)
 	codePos = k;
 }
 
-void JitCompilerA64::h_FSQRT_R(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_FSQRT_R(Instruction& instr, uint32_t& codePos)
 {
 	const uint32_t dst = (instr.dst % 4) + 20;
 
 	emit32(ARMV8A::FSQRT | dst | (dst << 5), code, codePos);
 }
 
-void JitCompilerA64::h_CBRANCH(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_CBRANCH(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
-	const uint32_t dst = IntRegMap[instr.src];
+	const uint32_t dst = IntRegMap[instr.dst];
+	const uint32_t modCond = instr.getModCond();
+	const uint32_t shift = modCond + ConditionOffset;
+	const uint32_t imm = (instr.getImm32() | (1U << shift)) & ~(1U << (shift - 1));
+
+	emitAddImmediate(dst, dst, imm, code, k);
+
+	// tst dst, mask
+	static_assert((ConditionMask == 0xFF) && (ConditionOffset == 8), "Update tst encoding for different mask and offset");
+	emit32((0xF2781C1F - (modCond << 16)) | (dst << 5), code, k);
+
+	int32_t offset = reg_changed_offset[instr.dst];
+	offset = ((offset - k) >> 2) & ((1 << 19) - 1);
+
+	// beq target
+	emit32(0x54000000 | (offset << 5), code, k);
+
+	for (uint32_t i = 0; i < RegistersCount; ++i)
+		reg_changed_offset[i] = k;
 
 	codePos = k;
 }
 
-void JitCompilerA64::h_CFROUND(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_CFROUND(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
 	const uint32_t src = IntRegMap[instr.src];
 
 	constexpr uint32_t tmp_reg = 18;
-	constexpr uint32_t fprc_tmp_reg = 8;
+	constexpr uint32_t fpcr_tmp_reg = 8;
 
 	// ror tmp_reg, src, imm
 	emit32(ARMV8A::ROR_IMM | tmp_reg | (src << 5) | ((instr.getImm32() & 63) << 10) | (src << 16), code, k);
 
-	// bfi fprc_tmp_reg, tmp_reg, 40, 2
-	emit32(0xB3580400 | fprc_tmp_reg | (tmp_reg << 5), code, k);
+	// bfi fpcr_tmp_reg, tmp_reg, 40, 2
+	emit32(0xB3580400 | fpcr_tmp_reg | (tmp_reg << 5), code, k);
 
-	// rbit tmp_reg, fprc_tmp_reg
-	emit32(0xDAC00000 | tmp_reg | (fprc_tmp_reg << 5), code, k);
+	// rbit tmp_reg, fpcr_tmp_reg
+	emit32(0xDAC00000 | tmp_reg | (fpcr_tmp_reg << 5), code, k);
 
 	// msr fpcr, tmp_reg
 	emit32(0xD51B4400 | tmp_reg, code, k);
@@ -718,7 +768,7 @@ void JitCompilerA64::h_CFROUND(Instruction& instr, int i, uint32_t& codePos)
 	codePos = k;
 }
 
-void JitCompilerA64::h_ISTORE(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_ISTORE(Instruction& instr, uint32_t& codePos)
 {
 	uint32_t k = codePos;
 
@@ -748,7 +798,7 @@ void JitCompilerA64::h_ISTORE(Instruction& instr, int i, uint32_t& codePos)
 	codePos = k;
 }
 
-void JitCompilerA64::h_NOP(Instruction& instr, int i, uint32_t& codePos)
+void JitCompilerA64::h_NOP(Instruction& instr, uint32_t& codePos)
 {
 }
 

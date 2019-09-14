@@ -38,7 +38,7 @@
 
 # Register allocation
 
-# x0  -> pointer to reg buffer
+# x0  -> pointer to reg buffer and then literal for IMUL_RCP
 # x1  -> pointer to mem buffer and then to dataset
 # x2  -> pointer to scratchpad
 # x3  -> loop counter
@@ -49,7 +49,7 @@
 # x8  -> fpcr (reversed bits)
 # x9  -> mx, ma
 # x10 -> spMix1
-# x11 -> spMix2
+# x11 -> literal for IMUL_RCP
 # x12 -> "r4"
 # x13 -> "r5"
 # x14 -> "r6"
@@ -58,7 +58,7 @@
 # x17 -> spAddr1
 # x18 -> temporary
 # x19 -> temporary
-# x20 -> temporary
+# x20 -> literal for IMUL_RCP
 # x21 -> literal for IMUL_RCP
 # x22 -> literal for IMUL_RCP
 # x23 -> literal for IMUL_RCP
@@ -137,7 +137,13 @@ randomx_program_aarch64:
 	mrs	x8, fpcr
 	rbit	x8, x8
 
+	# Save x0
+	str	x0, [sp, -16]!
+
 	# Read literals
+	ldr	x0, literal_x0
+	ldr	x11, literal_x11
+	ldr	x20, literal_x20
 	ldr	x21, literal_x21
 	ldr	x22, literal_x22
 	ldr	x23, literal_x23
@@ -227,6 +233,15 @@ randomx_program_aarch64_vm_instructions:
 	# 12 KB buffer for generated instructions
 	.fill 3072,4,0
 
+literal_x0:
+	.fill 1,8,0
+
+literal_x11:
+	.fill 1,8,0
+
+literal_x20:
+	.fill 1,8,0
+
 literal_x21:
 	.fill 1,8,0
 
@@ -260,39 +275,39 @@ literal_x30:
 randomx_program_aarch64_vm_instructions_end:
 
 	# mx ^= r[readReg2] ^ r[readReg3];
-	eor	x9, x9, x11
+	eor	x9, x9, x18
 
 	# Calculate dataset pointer for dataset prefetch
-	mov	w20, w9
+	mov	w18, w9
 randomx_program_aarch64_cacheline_align_mask1:
 	# Actual mask will be inserted by JIT compiler
-	and	x20, x20, 1
-	add	x20, x20, x1
+	and	x18, x18, 1
+	add	x18, x18, x1
 
 	# Prefetch dataset data
-	prfm	pldl2strm, [x20]
+	prfm	pldl2strm, [x18]
 
 	# mx <-> ma
 	ror	x9, x9, 32
 
 	# Calculate dataset pointer for dataset read
-	mov	w20, w9
+	mov	w10, w9
 randomx_program_aarch64_cacheline_align_mask2:
 	# Actual mask will be inserted by JIT compiler
-	and	x20, x20, 1
-	add	x20, x20, x1
+	and	x10, x10, 1
+	add	x10, x10, x1
 
 	# xor integer registers with dataset data
-	ldp	x18, x19, [x20]
+	ldp	x18, x19, [x10]
 	eor	x4, x4, x18
 	eor	x5, x5, x19
-	ldp	x18, x19, [x20, 16]
+	ldp	x18, x19, [x10, 16]
 	eor	x6, x6, x18
 	eor	x7, x7, x19
-	ldp	x18, x19, [x20, 32]
+	ldp	x18, x19, [x10, 32]
 	eor	x12, x12, x18
 	eor	x13, x13, x19
-	ldp	x18, x19, [x20, 48]
+	ldp	x18, x19, [x10, 48]
 	eor	x14, x14, x18
 	eor	x15, x15, x19
 
@@ -318,6 +333,9 @@ randomx_program_aarch64_update_spMix1:
 	subs	x3, x3, 1
 	bne	randomx_program_aarch64_main_loop
 	
+	# Restore x0
+	ldr	x0, [sp], 16
+
 	# Store integer registers
 	stp	x4, x5, [x0, 0]
 	stp	x6, x7, [x0, 16]

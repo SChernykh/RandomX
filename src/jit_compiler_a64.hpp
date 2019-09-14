@@ -42,7 +42,7 @@ namespace randomx {
 	class SuperscalarProgram;
 	class Instruction;
 
-	typedef void(JitCompilerA64::*InstructionGeneratorA64)(Instruction&, int, uint32_t&);
+	typedef void(JitCompilerA64::*InstructionGeneratorA64)(Instruction&, uint32_t&);
 
 	class JitCompilerA64 {
 	public:
@@ -78,6 +78,7 @@ namespace randomx {
 
 	private:
 		static InstructionGeneratorA64 engine[256];
+		uint32_t reg_changed_offset[8];
 		uint8_t* code;
 		uint32_t literalPos;
 
@@ -96,35 +97,35 @@ namespace randomx {
 		template<uint32_t tmp_reg_fp>
 		void emitMemLoadFP(uint32_t src, Instruction& instr, uint8_t* code, uint32_t& codePos);
 
-		void h_IADD_RS(Instruction&, int, uint32_t&);
-		void h_IADD_M(Instruction&, int, uint32_t&);
-		void h_ISUB_R(Instruction&, int, uint32_t&);
-		void h_ISUB_M(Instruction&, int, uint32_t&);
-		void h_IMUL_R(Instruction&, int, uint32_t&);
-		void h_IMUL_M(Instruction&, int, uint32_t&);
-		void h_IMULH_R(Instruction&, int, uint32_t&);
-		void h_IMULH_M(Instruction&, int, uint32_t&);
-		void h_ISMULH_R(Instruction&, int, uint32_t&);
-		void h_ISMULH_M(Instruction&, int, uint32_t&);
-		void h_IMUL_RCP(Instruction&, int, uint32_t&);
-		void h_INEG_R(Instruction&, int, uint32_t&);
-		void h_IXOR_R(Instruction&, int, uint32_t&);
-		void h_IXOR_M(Instruction&, int, uint32_t&);
-		void h_IROR_R(Instruction&, int, uint32_t&);
-		void h_IROL_R(Instruction&, int, uint32_t&);
-		void h_ISWAP_R(Instruction&, int, uint32_t&);
-		void h_FSWAP_R(Instruction&, int, uint32_t&);
-		void h_FADD_R(Instruction&, int, uint32_t&);
-		void h_FADD_M(Instruction&, int, uint32_t&);
-		void h_FSUB_R(Instruction&, int, uint32_t&);
-		void h_FSUB_M(Instruction&, int, uint32_t&);
-		void h_FSCAL_R(Instruction&, int, uint32_t&);
-		void h_FMUL_R(Instruction&, int, uint32_t&);
-		void h_FDIV_M(Instruction&, int, uint32_t&);
-		void h_FSQRT_R(Instruction&, int, uint32_t&);
-		void h_CBRANCH(Instruction&, int, uint32_t&);
-		void h_CFROUND(Instruction&, int, uint32_t&);
-		void h_ISTORE(Instruction&, int, uint32_t&);
-		void h_NOP(Instruction&, int, uint32_t&);
+		void h_IADD_RS(Instruction&, uint32_t&);
+		void h_IADD_M(Instruction&, uint32_t&);
+		void h_ISUB_R(Instruction&, uint32_t&);
+		void h_ISUB_M(Instruction&, uint32_t&);
+		void h_IMUL_R(Instruction&, uint32_t&);
+		void h_IMUL_M(Instruction&, uint32_t&);
+		void h_IMULH_R(Instruction&, uint32_t&);
+		void h_IMULH_M(Instruction&, uint32_t&);
+		void h_ISMULH_R(Instruction&, uint32_t&);
+		void h_ISMULH_M(Instruction&, uint32_t&);
+		void h_IMUL_RCP(Instruction&, uint32_t&);
+		void h_INEG_R(Instruction&, uint32_t&);
+		void h_IXOR_R(Instruction&, uint32_t&);
+		void h_IXOR_M(Instruction&, uint32_t&);
+		void h_IROR_R(Instruction&, uint32_t&);
+		void h_IROL_R(Instruction&, uint32_t&);
+		void h_ISWAP_R(Instruction&, uint32_t&);
+		void h_FSWAP_R(Instruction&, uint32_t&);
+		void h_FADD_R(Instruction&, uint32_t&);
+		void h_FADD_M(Instruction&, uint32_t&);
+		void h_FSUB_R(Instruction&, uint32_t&);
+		void h_FSUB_M(Instruction&, uint32_t&);
+		void h_FSCAL_R(Instruction&, uint32_t&);
+		void h_FMUL_R(Instruction&, uint32_t&);
+		void h_FDIV_M(Instruction&, uint32_t&);
+		void h_FSQRT_R(Instruction&, uint32_t&);
+		void h_CBRANCH(Instruction&, uint32_t&);
+		void h_CFROUND(Instruction&, uint32_t&);
+		void h_ISTORE(Instruction&, uint32_t&);
+		void h_NOP(Instruction&, uint32_t&);
 	};
 }
