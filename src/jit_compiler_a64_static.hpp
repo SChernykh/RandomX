@@ -31,8 +31,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern "C" {
 	void randomx_program_aarch64(void* reg, void* mem, void* scratchpad, uint64_t iterations);
+	void randomx_program_aarch64_main_loop();
 	void randomx_program_aarch64_vm_instructions();
 	void randomx_program_aarch64_vm_instructions_end();
+	void randomx_program_aarch64_cacheline_align_mask1();
+	void randomx_program_aarch64_cacheline_align_mask2();
 	void randomx_program_aarch64_update_spMix1();
 	void randomx_program_aarch64_end();
 }

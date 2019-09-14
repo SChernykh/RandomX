@@ -122,6 +122,8 @@ namespace randomx {
 		void h_FMUL_R(Instruction&, int, uint32_t&);
 		void h_FDIV_M(Instruction&, int, uint32_t&);
 		void h_FSQRT_R(Instruction&, int, uint32_t&);
+		void h_CBRANCH(Instruction&, int, uint32_t&);
+		void h_CFROUND(Instruction&, int, uint32_t&);
 		void h_ISTORE(Instruction&, int, uint32_t&);
 		void h_NOP(Instruction&, int, uint32_t&);
 	};

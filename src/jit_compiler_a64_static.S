@@ -28,8 +28,11 @@
 	.arch armv8-a
 	.text
 	.global	randomx_program_aarch64
+	.global	randomx_program_aarch64_main_loop
 	.global	randomx_program_aarch64_vm_instructions
 	.global	randomx_program_aarch64_vm_instructions_end
+	.global randomx_program_aarch64_cacheline_align_mask1
+	.global randomx_program_aarch64_cacheline_align_mask2
 	.global randomx_program_aarch64_update_spMix1
 	.global	randomx_program_aarch64_end
 
@@ -43,7 +46,7 @@
 # x5  -> "r1"
 # x6  -> "r2"
 # x7  -> "r3"
-# x8  -> temporary
+# x8  -> fpcr (reversed bits)
 # x9  -> mx, ma
 # x10 -> spMix1
 # x11 -> spMix2
@@ -51,23 +54,23 @@
 # x13 -> "r5"
 # x14 -> "r6"
 # x15 -> "r7"
-# x16 -> ScratchpadL1Mask64
-# x17 -> ScratchpadL2Mask64
-# x18 -> ScratchpadL3Mask64
-# x19 -> spAddr0
-# x20 -> spAddr1
-# x21 -> temporary
-# x22 -> temporary
-# x23 -> temporary
-# x24 -> temporary
-# x25 -> temporary
-# x26 -> ScratchpadL1Mask8
-# x27 -> ScratchpadL2Mask8
-# x28 -> ScratchpadL3Mask8
-# x29 -> CacheLineAlignMask
+# x16 -> spAddr0
+# x17 -> spAddr1
+# x18 -> temporary
+# x19 -> temporary
+# x20 -> temporary
+# x21 -> literal for IMUL_RCP
+# x22 -> literal for IMUL_RCP
+# x23 -> literal for IMUL_RCP
+# x24 -> literal for IMUL_RCP
+# x25 -> literal for IMUL_RCP
+# x26 -> literal for IMUL_RCP
+# x27 -> literal for IMUL_RCP
+# x28 -> literal for IMUL_RCP
+# x29 -> literal for IMUL_RCP
+# x30 -> literal for IMUL_RCP
 
-# v0-v7 -> temporary
-# v8-v15 -> not used
+# v0-v15 -> not used
 # v16 -> "f0"
 # v17 -> "f1"
 # v18 -> "f2"
@@ -113,91 +116,98 @@ randomx_program_aarch64:
 	# Load initial spMix value
 	mov	x10, x9
 
-	# Load Scratchpad masks
-	mov	x16, 16384 - 64
-	mov	x17, 262144 - 64
-	mov	x18, 2097152 - 64
-	mov	x26, 16384 - 8
-	mov	x27, 262144 - 8
-	mov	x28, 2097152 - 8
-
-	# Load CacheLineAlignMask
-	mov	x29, 0x7FFFFFC0
-
 	# Load group A registers
 	ldp	q24, q25, [x0, 192]
 	ldp	q26, q27, [x0, 224]
 
 	# Load E 'and' mask
-	mov	x21, 0x00FFFFFFFFFFFFFF
-	ins	v29.d[0], x21
-	ins	v29.d[1], x21
+	mov	x16, 0x00FFFFFFFFFFFFFF
+	ins	v29.d[0], x16
+	ins	v29.d[1], x16
 
 	# Load E 'or' mask (stored in reg.f[0])
 	ldr	q30, [x0, 64]
 
 	# Load scale mask
-	mov	x21, 0x80f0000000000000
-	ins	v31.d[0], x21
-	ins	v31.d[1], x21
+	mov	x16, 0x80f0000000000000
+	ins	v31.d[0], x16
+	ins	v31.d[1], x16
 
-main_loop:
+	# Read fpcr
+	mrs	x8, fpcr
+	rbit	x8, x8
+
+	# Read literals
+	ldr	x21, literal_x21
+	ldr	x22, literal_x22
+	ldr	x23, literal_x23
+	ldr	x24, literal_x24
+	ldr	x25, literal_x25
+	ldr	x26, literal_x26
+	ldr	x27, literal_x27
+	ldr	x28, literal_x28
+	ldr	x29, literal_x29
+	ldr	x30, literal_x30
+
+randomx_program_aarch64_main_loop:
 	# spAddr0 = spMix1 & ScratchpadL3Mask64;
 	# spAddr1 = (spMix1 >> 32) & ScratchpadL3Mask64;
-	lsr	x21, x10, 32
-	and	w19, w10, w18
-	and	w20, w21, w18
+	lsr	x18, x10, 32
 
-	# x19 = scratchpad + spAddr0
-	# x20 = scratchpad + spAddr1
-	add	x19, x19, x2
-	add	x20, x20, x2
+	# Actual mask will be inserted by JIT compiler
+	and	w16, w10, 1
+	and	w17, w18, 1
+
+	# x16 = scratchpad + spAddr0
+	# x17 = scratchpad + spAddr1
+	add	x16, x16, x2
+	add	x17, x17, x2
 
 	# xor integer registers with scratchpad data (spAddr0)
-	ldp	x21, x22, [x19]
-	ldp	x23, x24, [x19, 16]
-	eor	x4, x4, x21
-	eor	x5, x5, x22
-	eor	x6, x6, x23
-	eor	x7, x7, x24
-	ldp	x21, x22, [x19, 32]
-	ldp	x23, x24, [x19, 48]
-	eor	x12, x12, x21
-	eor	x13, x13, x22
-	eor	x14, x14, x23
-	eor	x15, x15, x24
+	ldp	x18, x19, [x16]
+	eor	x4, x4, x18
+	eor	x5, x5, x19
+	ldp	x18, x19, [x16, 16]
+	eor	x6, x6, x18
+	eor	x7, x7, x19
+	ldp	x18, x19, [x16, 32]
+	eor	x12, x12, x18
+	eor	x13, x13, x19
+	ldp	x18, x19, [x16, 48]
+	eor	x14, x14, x18
+	eor	x15, x15, x19
 
 	# Load group F registers (spAddr1)
-	ldpsw	x21, x22, [x20]
-	ldpsw	x23, x24, [x20, 8]
-	ins	v16.d[0], x21
-	ins	v16.d[1], x22
-	ins	v17.d[0], x23
-	ins	v17.d[1], x24
-	ldpsw	x21, x22, [x20, 16]
-	ldpsw	x23, x24, [x20, 24]
-	ins	v18.d[0], x21
-	ins	v18.d[1], x22
-	ins	v19.d[0], x23
-	ins	v19.d[1], x24
+	ldpsw	x18, x19, [x17]
+	ins	v16.d[0], x18
+	ins	v16.d[1], x19
+	ldpsw	x18, x19, [x17, 8]
+	ins	v17.d[0], x18
+	ins	v17.d[1], x19
+	ldpsw	x18, x19, [x17, 16]
+	ins	v18.d[0], x18
+	ins	v18.d[1], x19
+	ldpsw	x18, x19, [x17, 24]
+	ins	v19.d[0], x18
+	ins	v19.d[1], x19
 	scvtf	v16.2d, v16.2d
 	scvtf	v17.2d, v17.2d
 	scvtf	v18.2d, v18.2d
 	scvtf	v19.2d, v19.2d
 
 	# Load group E registers (spAddr1)
-	ldpsw	x21, x22, [x20, 32]
-	ldpsw	x23, x24, [x20, 40]
-	ins	v20.d[0], x21
-	ins	v20.d[1], x22
-	ins	v21.d[0], x23
-	ins	v21.d[1], x24
-	ldpsw	x21, x22, [x20, 48]
-	ldpsw	x23, x24, [x20, 56]
-	ins	v22.d[0], x21
-	ins	v22.d[1], x22
-	ins	v23.d[0], x23
-	ins	v23.d[1], x24
+	ldpsw	x18, x19, [x17, 32]
+	ins	v20.d[0], x18
+	ins	v20.d[1], x19
+	ldpsw	x18, x19, [x17, 40]
+	ins	v21.d[0], x18
+	ins	v21.d[1], x19
+	ldpsw	x18, x19, [x17, 48]
+	ins	v22.d[0], x18
+	ins	v22.d[1], x19
+	ldpsw	x18, x19, [x17, 56]
+	ins	v23.d[0], x18
+	ins	v23.d[1], x19
 	scvtf	v20.2d, v20.2d
 	scvtf	v21.2d, v21.2d
 	scvtf	v22.2d, v22.2d
@@ -214,8 +224,38 @@ main_loop:
 	# Execute VM instructions
 randomx_program_aarch64_vm_instructions:
 
-	# 16 KB buffer for generated instructions
-	.fill 4096,4,0
+	# 12 KB buffer for generated instructions
+	.fill 3072,4,0
+
+literal_x21:
+	.fill 1,8,0
+
+literal_x22:
+	.fill 1,8,0
+
+literal_x23:
+	.fill 1,8,0
+
+literal_x24:
+	.fill 1,8,0
+
+literal_x25:
+	.fill 1,8,0
+
+literal_x26:
+	.fill 1,8,0
+
+literal_x27:
+	.fill 1,8,0
+
+literal_x28:
+	.fill 1,8,0
+
+literal_x29:
+	.fill 1,8,0
+
+literal_x30:
+	.fill 1,8,0
 
 randomx_program_aarch64_vm_instructions_end:
 
@@ -223,43 +263,47 @@ randomx_program_aarch64_vm_instructions_end:
 	eor	x9, x9, x11
 
 	# Calculate dataset pointer for dataset prefetch
-	mov	w25, w9
-	and	x25, x25, x29
-	add	x25, x25, x1
+	mov	w20, w9
+randomx_program_aarch64_cacheline_align_mask1:
+	# Actual mask will be inserted by JIT compiler
+	and	x20, x20, 1
+	add	x20, x20, x1
 
 	# Prefetch dataset data
-	prfm	pldl2strm, [x25]
+	prfm	pldl2strm, [x20]
 
 	# mx <-> ma
 	ror	x9, x9, 32
 
 	# Calculate dataset pointer for dataset read
-	mov	w25, w9
-	and	x25, x25, x29
-	add	x25, x25, x1
+	mov	w20, w9
+randomx_program_aarch64_cacheline_align_mask2:
+	# Actual mask will be inserted by JIT compiler
+	and	x20, x20, 1
+	add	x20, x20, x1
 
 	# xor integer registers with dataset data
-	ldp	x21, x22, [x25]
-	ldp	x23, x24, [x25, 16]
-	eor	x4, x4, x21
-	eor	x5, x5, x22
-	eor	x6, x6, x23
-	eor	x7, x7, x24
-	ldp	x21, x22, [x25, 32]
-	ldp	x23, x24, [x25, 48]
-	eor	x12, x12, x21
-	eor	x13, x13, x22
-	eor	x14, x14, x23
-	eor	x15, x15, x24
+	ldp	x18, x19, [x20]
+	eor	x4, x4, x18
+	eor	x5, x5, x19
+	ldp	x18, x19, [x20, 16]
+	eor	x6, x6, x18
+	eor	x7, x7, x19
+	ldp	x18, x19, [x20, 32]
+	eor	x12, x12, x18
+	eor	x13, x13, x19
+	ldp	x18, x19, [x20, 48]
+	eor	x14, x14, x18
+	eor	x15, x15, x19
 
 randomx_program_aarch64_update_spMix1:
 	eor	x10, x0, x0
 
 	# Store integer registers to scratchpad (spAddr1)
-	stp	x4, x5, [x20, 0]
-	stp	x6, x7, [x20, 16]
-	stp	x12, x13, [x20, 32]
-	stp	x14, x15, [x20, 48]
+	stp	x4, x5, [x17, 0]
+	stp	x6, x7, [x17, 16]
+	stp	x12, x13, [x17, 32]
+	stp	x14, x15, [x17, 48]
 
 	# xor group F and group E registers
 	eor	v16.16b, v16.16b, v20.16b
@@ -268,11 +312,11 @@ randomx_program_aarch64_update_spMix1:
 	eor	v19.16b, v19.16b, v23.16b
 
 	# Store FP registers to scratchpad (spAddr0)
-	stp	q16, q17, [x19, 0]
-	stp	q18, q19, [x19, 32]
+	stp	q16, q17, [x16, 0]
+	stp	q18, q19, [x16, 32]
 
 	subs	x3, x3, 1
-	bne	main_loop
+	bne	randomx_program_aarch64_main_loop
 	
 	# Store integer registers
 	stp	x4, x5, [x0, 0]
