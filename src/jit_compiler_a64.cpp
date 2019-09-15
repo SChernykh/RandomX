@@ -66,6 +66,7 @@ namespace randomx {
 static const size_t CodeSize = ((uint8_t*)randomx_program_aarch64_end) - ((uint8_t*)randomx_program_aarch64);
 static const size_t MainLoopBegin = ((uint8_t*)randomx_program_aarch64_main_loop) - ((uint8_t*)randomx_program_aarch64);
 static const size_t PrologueSize = ((uint8_t*)randomx_program_aarch64_vm_instructions) - ((uint8_t*)randomx_program_aarch64);
+static const size_t ImulRcpLiteralsEnd = ((uint8_t*)randomx_program_aarch64_imul_rcp_literals_end) - ((uint8_t*)randomx_program_aarch64);
 static const size_t InstructionsEnd = ((uint8_t*)randomx_program_aarch64_vm_instructions_end) - ((uint8_t*)randomx_program_aarch64);
 
 constexpr uint32_t IntRegMap[8] = { 4, 5, 6, 7, 12, 13, 14, 15 };
@@ -74,7 +75,8 @@ template<typename T> static constexpr size_t Log2(T value) { return (value > 1) 
 
 JitCompilerA64::JitCompilerA64()
 	: code((uint8_t*) allocMemoryPages(CodeSize))
-	, literalPos(InstructionsEnd)
+	, literalPos(ImulRcpLiteralsEnd)
+	, num32bitLiterals(0)
 {
 	memset(reg_changed_offset, 0, sizeof(reg_changed_offset));
 	memcpy(code, (void*) randomx_program_aarch64, CodeSize);
@@ -102,7 +104,8 @@ void JitCompilerA64::generateProgram(Program& program, ProgramConfiguration& con
 	emit32(0x121A0000 | 17 | (18 << 5) | ((Log2(RANDOMX_SCRATCHPAD_L3) - 7) << 10), code, codePos);
 
 	codePos = PrologueSize;
-	literalPos = InstructionsEnd;
+	literalPos = ImulRcpLiteralsEnd;
+	num32bitLiterals = 0;
 
 	for (uint32_t i = 0; i < RegistersCount; ++i)
 		reg_changed_offset[i] = codePos;
@@ -157,19 +160,38 @@ void JitCompilerA64::emitMovImmediate(uint32_t dst, uint32_t imm, uint8_t* code,
 	}
 	else
 	{
-		if (static_cast<int32_t>(imm) < 0)
+		if (num32bitLiterals < 64)
 		{
-			// movn tmp_reg, ~imm32 (16 high bits)
-			emit32(ARMV8A::MOVN | dst | (1 << 21) | ((~imm >> 16) << 5), code, k);
+			if (static_cast<int32_t>(imm) < 0)
+			{
+				// smov dst, vN.s[M]
+				emit32(0x4E042C00 | dst | ((num32bitLiterals / 4) << 5) | ((num32bitLiterals % 4) << 19), code, k);
+			}
+			else
+			{
+				// umov dst, vN.s[M]
+				emit32(0x0E043C00 | dst | ((num32bitLiterals / 4) << 5) | ((num32bitLiterals % 4) << 19), code, k);
+			}
+
+			((uint32_t*)(code + ImulRcpLiteralsEnd))[num32bitLiterals] = imm;
+			++num32bitLiterals;
 		}
 		else
 		{
-			// movz tmp_reg, imm32 (16 high bits)
-			emit32(ARMV8A::MOVZ | dst | (1 << 21) | ((imm >> 16) << 5), code, k);
-		}
+			if (static_cast<int32_t>(imm) < 0)
+			{
+				// movn tmp_reg, ~imm32 (16 high bits)
+				emit32(ARMV8A::MOVN | dst | (1 << 21) | ((~imm >> 16) << 5), code, k);
+			}
+			else
+			{
+				// movz tmp_reg, imm32 (16 high bits)
+				emit32(ARMV8A::MOVZ | dst | (1 << 21) | ((imm >> 16) << 5), code, k);
+			}
 
-		// movk tmp_reg, imm32 (16 low bits)
-		emit32(ARMV8A::MOVK | dst | ((imm & 0xFFFF) << 5), code, k);
+			// movk tmp_reg, imm32 (16 low bits)
+			emit32(ARMV8A::MOVK | dst | ((imm & 0xFFFF) << 5), code, k);
+		}
 	}
 
 	codePos = k;
@@ -472,7 +494,7 @@ void JitCompilerA64::h_IMUL_RCP(Instruction& instr, uint32_t& codePos)
 		--shift;
 #endif
 
-	const uint32_t literal_id = (InstructionsEnd - literalPos) / sizeof(uint64_t);
+	const uint32_t literal_id = (ImulRcpLiteralsEnd - literalPos) / sizeof(uint64_t);
 
 	literalPos -= sizeof(uint64_t);
 	*(uint64_t*)(code + literalPos) = (q << shift) + ((r << shift) / divisor);

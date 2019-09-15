@@ -30,6 +30,7 @@
 	.global	randomx_program_aarch64
 	.global	randomx_program_aarch64_main_loop
 	.global	randomx_program_aarch64_vm_instructions
+	.global randomx_program_aarch64_imul_rcp_literals_end
 	.global	randomx_program_aarch64_vm_instructions_end
 	.global randomx_program_aarch64_cacheline_align_mask1
 	.global randomx_program_aarch64_cacheline_align_mask2
@@ -70,7 +71,7 @@
 # x29 -> literal for IMUL_RCP
 # x30 -> literal for IMUL_RCP
 
-# v0-v15 -> not used
+# v0-v15 -> store 32-bit literals
 # v16 -> "f0"
 # v17 -> "f1"
 # v18 -> "f2"
@@ -90,7 +91,7 @@
 
 randomx_program_aarch64:
 	# Save callee-saved registers
-	sub	sp, sp, 128
+	sub	sp, sp, 192
 	stp	x16, x17, [sp]
 	stp	x18, x19, [sp, 16]
 	stp	x20, x21, [sp, 32]
@@ -99,6 +100,10 @@ randomx_program_aarch64:
 	stp	x26, x27, [sp, 80]
 	stp	x28, x29, [sp, 96]
 	stp	x8, x30, [sp, 112]
+	stp	d8, d9, [sp, 128]
+	stp	d10, d11, [sp, 144]
+	stp	d12, d13, [sp, 160]
+	stp	d14, d15, [sp, 176]
 
 	# Zero integer registers
 	mov	x4, xzr
@@ -154,6 +159,23 @@ randomx_program_aarch64:
 	ldr	x28, literal_x28
 	ldr	x29, literal_x29
 	ldr	x30, literal_x30
+
+	ldr	q0, literal_v0
+	ldr	q1, literal_v1
+	ldr	q2, literal_v2
+	ldr	q3, literal_v3
+	ldr	q4, literal_v4
+	ldr	q5, literal_v5
+	ldr	q6, literal_v6
+	ldr	q7, literal_v7
+	ldr	q8, literal_v8
+	ldr	q9, literal_v9
+	ldr	q10, literal_v10
+	ldr	q11, literal_v11
+	ldr	q12, literal_v12
+	ldr	q13, literal_v13
+	ldr	q14, literal_v14
+	ldr	q15, literal_v15
 
 randomx_program_aarch64_main_loop:
 	# spAddr0 = spMix1 & ScratchpadL3Mask64;
@@ -233,44 +255,37 @@ randomx_program_aarch64_vm_instructions:
 	# 12 KB buffer for generated instructions
 	.fill 3072,4,0
 
-literal_x0:
-	.fill 1,8,0
+literal_x0:  .fill 1,8,0
+literal_x11: .fill 1,8,0
+literal_x20: .fill 1,8,0
+literal_x21: .fill 1,8,0
+literal_x22: .fill 1,8,0
+literal_x23: .fill 1,8,0
+literal_x24: .fill 1,8,0
+literal_x25: .fill 1,8,0
+literal_x26: .fill 1,8,0
+literal_x27: .fill 1,8,0
+literal_x28: .fill 1,8,0
+literal_x29: .fill 1,8,0
+literal_x30: .fill 1,8,0
+randomx_program_aarch64_imul_rcp_literals_end:
 
-literal_x11:
-	.fill 1,8,0
-
-literal_x20:
-	.fill 1,8,0
-
-literal_x21:
-	.fill 1,8,0
-
-literal_x22:
-	.fill 1,8,0
-
-literal_x23:
-	.fill 1,8,0
-
-literal_x24:
-	.fill 1,8,0
-
-literal_x25:
-	.fill 1,8,0
-
-literal_x26:
-	.fill 1,8,0
-
-literal_x27:
-	.fill 1,8,0
-
-literal_x28:
-	.fill 1,8,0
-
-literal_x29:
-	.fill 1,8,0
-
-literal_x30:
-	.fill 1,8,0
+literal_v0:  .fill 2,8,0
+literal_v1:  .fill 2,8,0
+literal_v2:  .fill 2,8,0
+literal_v3:  .fill 2,8,0
+literal_v4:  .fill 2,8,0
+literal_v5:  .fill 2,8,0
+literal_v6:  .fill 2,8,0
+literal_v7:  .fill 2,8,0
+literal_v8:  .fill 2,8,0
+literal_v9:  .fill 2,8,0
+literal_v10: .fill 2,8,0
+literal_v11: .fill 2,8,0
+literal_v12: .fill 2,8,0
+literal_v13: .fill 2,8,0
+literal_v14: .fill 2,8,0
+literal_v15: .fill 2,8,0
 
 randomx_program_aarch64_vm_instructions_end:
 
@@ -357,7 +372,11 @@ randomx_program_aarch64_update_spMix1:
 	ldp	x26, x27, [sp, 80]
 	ldp	x28, x29, [sp, 96]
 	ldp	x8, x30, [sp, 112]
-	add	sp, sp, 128
+	ldp	d8, d9, [sp, 128]
+	ldp	d10, d11, [sp, 144]
+	ldp	d12, d13, [sp, 160]
+	ldp	d14, d15, [sp, 176]
+	add	sp, sp, 192
 
 	ret
 
