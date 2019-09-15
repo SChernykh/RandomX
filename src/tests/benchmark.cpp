@@ -232,12 +232,27 @@ int main(int argc, char** argv) {
 			}
 
 			char* dataset_memory = reinterpret_cast<char*>(randomx_get_dataset_memory(dataset));
-			bool read_ok = false;
+			bool read_ok = true;
 
 			FILE* fp = fopen("dataset.bin", "rb");
 			if (fp)
 			{
-				read_ok = (fread(dataset_memory, 1, randomx::DatasetSize, fp) == randomx::DatasetSize);
+				constexpr size_t N = 1 << 24;
+				for (char* p = dataset_memory, *e = dataset_memory + randomx::DatasetSize; p < e;)
+				{
+					size_t nBytes = e - p;
+					if (nBytes > N)
+						nBytes = N;
+
+					printf("Loading dataset: %.2f%%   \r", (p - dataset_memory) * 100.0 / randomx::DatasetSize);
+					read_ok &= (fread(p, 1, nBytes, fp) == nBytes);
+					if (!read_ok)
+					{
+						printf("\nfread failed\n");
+						break;
+					}
+					p += nBytes;
+				}
 				fclose(fp);
 			}
 
