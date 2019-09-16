@@ -51,21 +51,18 @@ namespace randomx {
 
 		void generateProgram(Program&, ProgramConfiguration&);
 
-		void generateProgramLight(Program&, ProgramConfiguration&, uint32_t) {
-			
-		}
+		void generateProgramLight(Program&, ProgramConfiguration&, uint32_t) {}
+
 		template<size_t N>
-		void generateSuperscalarHash(SuperscalarProgram(&programs)[N], std::vector<uint64_t> &) {
+		void generateSuperscalarHash(SuperscalarProgram(&programs)[N], std::vector<uint64_t> &) {}
 
-		}
-		void generateDatasetInitCode() {
+		void generateDatasetInitCode() {}
 
-		}
 		ProgramFunc* getProgramFunc() {
 			return reinterpret_cast<ProgramFunc*>(code);
 		}
 		DatasetInitFunc* getDatasetInitFunc() {
-			return nullptr;
+			return initDataset;
 		}
 		uint8_t* getCode() {
 			return code;
@@ -128,5 +125,7 @@ namespace randomx {
 		void h_CFROUND(Instruction&, uint32_t&);
 		void h_ISTORE(Instruction&, uint32_t&);
 		void h_NOP(Instruction&, uint32_t&);
+
+		static void initDataset(randomx_cache* cache, uint8_t* dataset, uint32_t startBlock, uint32_t endBlock);
 	};
 }

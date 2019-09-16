@@ -36,6 +36,11 @@
 	.global randomx_program_aarch64_cacheline_align_mask2
 	.global randomx_program_aarch64_update_spMix1
 	.global	randomx_program_aarch64_end
+	.global randomx_calc_dataset_item_aarch64
+	.global randomx_calc_dataset_item_aarch64_prefetch
+	.global randomx_calc_dataset_item_aarch64_mix
+	.global randomx_calc_dataset_item_aarch64_store_result
+	.global randomx_calc_dataset_item_aarch64_end
 
 # Register allocation
 
@@ -381,3 +386,118 @@ randomx_program_aarch64_update_spMix1:
 	ret
 
 randomx_program_aarch64_end:
+
+# Input parameters
+#
+# x0 -> pointer to cache memory
+# x1 -> pointer to output
+# x2 -> item number
+#
+# Register allocation
+#
+# x0-x7 -> output value (calculated dataset item)
+# x8 -> pointer to cache memory
+# x9 -> pointer to output
+# x10 -> registerValue
+# x11 -> mixBlock
+# x12 -> temporary
+# x13 -> temporary
+
+randomx_calc_dataset_item_aarch64:
+	sub	sp, sp, 112
+	stp	x0, x1, [sp]
+	stp	x2, x3, [sp, 16]
+	stp	x4, x5, [sp, 32]
+	stp	x6, x7, [sp, 48]
+	stp	x8, x9, [sp, 64]
+	stp	x10, x11, [sp, 80]
+	stp	x12, x13, [sp, 96]
+
+	mov	x8, x0
+	mov	x9, x1
+	mov	x10, x2
+
+	# rl[0] = (itemNumber + 1) * superscalarMul0;
+	ldr	x12, superscalarMul0
+	madd	x0, x1, x12, x12
+
+	# rl[1] = rl[0] ^ superscalarAdd1;
+	ldr	x12, superscalarAdd1
+	eor	x1, x20, x12
+
+	# rl[2] = rl[0] ^ superscalarAdd2;
+	ldr	x12, superscalarAdd2
+	eor	x2, x20, x12
+
+	# rl[3] = rl[0] ^ superscalarAdd3;
+	ldr	x12, superscalarAdd3
+	eor	x3, x20, x12
+
+	# rl[4] = rl[0] ^ superscalarAdd4;
+	ldr	x12, superscalarAdd4
+	eor	x4, x20, x12
+
+	# rl[5] = rl[0] ^ superscalarAdd5;
+	ldr	x12, superscalarAdd5
+	eor	x5, x20, x12
+
+	# rl[6] = rl[0] ^ superscalarAdd6;
+	ldr	x12, superscalarAdd6
+	eor	x6, x20, x12
+
+	# rl[7] = rl[0] ^ superscalarAdd7;
+	ldr	x12, superscalarAdd7
+	eor	x7, x20, x12
+
+	b	randomx_calc_dataset_item_aarch64_prefetch
+
+superscalarMul0: .fill 1,8,6364136223846793005
+superscalarAdd1: .fill 1,8,9298411001130361340
+superscalarAdd2: .fill 1,8,12065312585734608966
+superscalarAdd3: .fill 1,8,9306329213124626780
+superscalarAdd4: .fill 1,8,5281919268842080866
+superscalarAdd5: .fill 1,8,10536153434571861004
+superscalarAdd6: .fill 1,8,3398623926847679864
+superscalarAdd7: .fill 1,8,9549104520008361294
+
+# Prefetch -> SuperScalar hash -> Mix will be repeated N times
+
+randomx_calc_dataset_item_aarch64_prefetch:
+	and	x11, x10, 4194303
+	add	x11, x8, x11, lsl 6
+	prfm	pldl2strm, [x11]
+
+	# Generated SuperScalar hash program goes here
+
+randomx_calc_dataset_item_aarch64_mix:
+	ldp	x12, x13, [x11]
+	eor	x0, x0, x12
+	eor	x1, x1, x13
+	ldp	x12, x13, [x11, 16]
+	eor	x2, x2, x12
+	eor	x3, x3, x13
+	ldp	x12, x13, [x11, 32]
+	eor	x4, x4, x12
+	eor	x5, x5, x13
+	ldp	x12, x13, [x11, 48]
+	eor	x6, x6, x12
+	eor	x7, x7, x13
+
+randomx_calc_dataset_item_aarch64_store_result:
+	stp	x0, x1, [x9]
+	stp	x2, x3, [x9, 16]
+	stp	x4, x5, [x9, 32]
+	stp	x6, x7, [x9, 48]
+
+	ldp	x0, x1, [sp]
+	ldp	x2, x3, [sp, 16]
+	ldp	x4, x5, [sp, 32]
+	ldp	x6, x7, [sp, 48]
+	ldp	x8, x9, [sp, 64]
+	ldp	x10, x11, [sp, 80]
+	ldp	x12, x13, [sp, 96]
+	add	sp, sp, 112
+
+	ret
+
+randomx_calc_dataset_item_aarch64_end:

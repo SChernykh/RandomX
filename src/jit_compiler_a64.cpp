@@ -860,4 +860,10 @@ void JitCompilerA64::h_NOP(Instruction& instr, uint32_t& codePos)
 		INST_HANDLE(NOP)
 	};
 
+void JitCompilerA64::initDataset(randomx_cache* cache, uint8_t* dataset, uint32_t startItem, uint32_t endItem)
+{
+	//for (uint32_t itemNumber = startItem; itemNumber < endItem; ++itemNumber, dataset += CacheLineSize)
+	//	initDatasetItem(cache, dataset, itemNumber);
+}
+
 }
