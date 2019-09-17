@@ -419,7 +419,7 @@ randomx_calc_dataset_item_aarch64:
 
 	# rl[0] = (itemNumber + 1) * superscalarMul0;
 	ldr	x12, superscalarMul0
-	madd	x0, x1, x12, x12
+	madd	x0, x2, x12, x12
 
 	# rl[1] = rl[0] ^ superscalarAdd1;
 	ldr	x12, superscalarAdd1
