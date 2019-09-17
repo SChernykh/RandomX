@@ -54,7 +54,7 @@ namespace randomx {
 		void generateProgramLight(Program&, ProgramConfiguration&, uint32_t) {}
 
 		template<size_t N>
-		void generateSuperscalarHash(SuperscalarProgram(&programs)[N], std::vector<uint64_t> &) {}
+		void generateSuperscalarHash(SuperscalarProgram(&programs)[N], std::vector<uint64_t> &);
 
 		void generateDatasetInitCode() {}
 
@@ -83,6 +83,12 @@ namespace randomx {
 		static void emit32(uint32_t val, uint8_t* code, uint32_t& codePos)
 		{
 			*(uint32_t*)(code + codePos) = val;
+			codePos += sizeof(val);
+		}
+
+		static void emit64(uint64_t val, uint8_t* code, uint32_t& codePos)
+		{
+			*(uint64_t*)(code + codePos) = val;
 			codePos += sizeof(val);
 		}
 

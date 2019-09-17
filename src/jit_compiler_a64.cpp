@@ -28,9 +28,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "jit_compiler_a64.hpp"
+#include "superscalar.hpp"
 #include "program.hpp"
-#include "virtual_memory.hpp"
 #include "reciprocal.h"
+#include "virtual_memory.hpp"
 
 namespace ARMV8A {
 
@@ -69,12 +70,17 @@ static const size_t PrologueSize = ((uint8_t*)randomx_program_aarch64_vm_instruc
 static const size_t ImulRcpLiteralsEnd = ((uint8_t*)randomx_program_aarch64_imul_rcp_literals_end) - ((uint8_t*)randomx_program_aarch64);
 static const size_t InstructionsEnd = ((uint8_t*)randomx_program_aarch64_vm_instructions_end) - ((uint8_t*)randomx_program_aarch64);
 
+static const size_t CalcDatasetItemSize =
+	(((uint8_t*)randomx_calc_dataset_item_aarch64_end) - ((uint8_t*)randomx_calc_dataset_item_aarch64)) +
+	((RANDOMX_SUPERSCALAR_LATENCY * 3) + 2) * RANDOMX_CACHE_ACCESSES * 16 +
+	(((uint8_t*)randomx_calc_dataset_item_aarch64_store_result) - ((uint8_t*)randomx_calc_dataset_item_aarch64_prefetch)) * (RANDOMX_CACHE_ACCESSES - 1);
+
 constexpr uint32_t IntRegMap[8] = { 4, 5, 6, 7, 12, 13, 14, 15 };
 
 template<typename T> static constexpr size_t Log2(T value) { return (value > 1) ? (Log2(value / 2) + 1) : 0; }
 
 JitCompilerA64::JitCompilerA64()
-	: code((uint8_t*) allocMemoryPages(CodeSize))
+	: code((uint8_t*) allocMemoryPages(CodeSize + CalcDatasetItemSize))
 	, literalPos(ImulRcpLiteralsEnd)
 	, num32bitLiterals(0)
 {
@@ -85,12 +91,12 @@ JitCompilerA64::JitCompilerA64()
 
 JitCompilerA64::~JitCompilerA64()
 {
-	freePagedMemory(code, CodeSize);
+	freePagedMemory(code, CodeSize + CalcDatasetItemSize);
 }
 
 void JitCompilerA64::enableAll()
 {
-	setPagesRWX(code, CodeSize);
+	setPagesRWX(code, CodeSize + CalcDatasetItemSize);
 }
 
 void JitCompilerA64::generateProgram(Program& program, ProgramConfiguration& config)
@@ -143,6 +149,117 @@ void JitCompilerA64::generateProgram(Program& program, ProgramConfiguration& con
 	__builtin___clear_cache(reinterpret_cast<char*>(code + MainLoopBegin), reinterpret_cast<char*>(code + codePos));
 #endif
 }
+
+template<size_t N>
+void JitCompilerA64::generateSuperscalarHash(SuperscalarProgram(&programs)[N], std::vector<uint64_t> &reciprocalCache)
+{
+	uint32_t codePos = CodeSize;
+
+	ptrdiff_t nBytes = ((uint8_t*)randomx_calc_dataset_item_aarch64_prefetch) - ((uint8_t*)randomx_calc_dataset_item_aarch64);
+	memcpy(code + codePos, (uint8_t*)randomx_calc_dataset_item_aarch64, nBytes);
+	codePos += nBytes;
+
+	num32bitLiterals = 64;
+	constexpr uint32_t tmp_reg = 12;
+
+	for (size_t i = 0; i < N; ++i)
+	{
+		nBytes = ((uint8_t*)randomx_calc_dataset_item_aarch64_mix) - ((uint8_t*)randomx_calc_dataset_item_aarch64_prefetch);
+		memcpy(code + codePos, (uint8_t*)randomx_calc_dataset_item_aarch64_prefetch, nBytes);
+		codePos += nBytes;
+
+		SuperscalarProgram& prog = programs[i];
+		const size_t progSize = prog.getSize();
+
+		uint32_t jmp_pos = codePos;
+		codePos += 4;
+
+		// Fill in literal pool
+		for (size_t j = 0; j < progSize; ++j)
+		{
+			const Instruction& instr = prog(j);
+			if (static_cast<SuperscalarInstructionType>(instr.opcode) == randomx::SuperscalarInstructionType::IMUL_RCP)
+				emit64(reciprocalCache[instr.getImm32()], code, codePos);
+		}
+
+		// Jump over literal pool
+		uint32_t literal_pos = jmp_pos;
+		emit32(ARMV8A::B | ((codePos - jmp_pos) / 4), code, literal_pos);
+
+		for (size_t j = 0; j < progSize; ++j)
+		{
+			const Instruction& instr = prog(j);
+			const uint32_t src = instr.src;
+			const uint32_t dst = instr.dst;
+
+			switch (static_cast<SuperscalarInstructionType>(instr.opcode))
+			{
+			case randomx::SuperscalarInstructionType::ISUB_R:
+				emit32(ARMV8A::SUB | dst | (dst << 5) | (src << 16), code, codePos);
+				break;
+			case randomx::SuperscalarInstructionType::IXOR_R:
+				emit32(ARMV8A::EOR | dst | (dst << 5) | (src << 16), code, codePos);
+				break;
+			case randomx::SuperscalarInstructionType::IADD_RS:
+				emit32(ARMV8A::ADD | dst | (dst << 5) | (instr.getModShift() << 10) | (src << 16), code, codePos);
+				break;
+			case randomx::SuperscalarInstructionType::IMUL_R:
+				emit32(ARMV8A::MUL | dst | (dst << 5) | (src << 16), code, codePos);
+				break;
+			case randomx::SuperscalarInstructionType::IROR_C:
+				emit32(ARMV8A::ROR_IMM | dst | (dst << 5) | ((instr.getImm32() & 63) << 10) | (dst << 16), code, codePos);
+				break;
+			case randomx::SuperscalarInstructionType::IADD_C7:
+			case randomx::SuperscalarInstructionType::IADD_C8:
+			case randomx::SuperscalarInstructionType::IADD_C9:
+				emitAddImmediate(dst, dst, instr.getImm32(), code, codePos);
+				break;
+			case randomx::SuperscalarInstructionType::IXOR_C7:
+			case randomx::SuperscalarInstructionType::IXOR_C8:
+			case randomx::SuperscalarInstructionType::IXOR_C9:
+				emitMovImmediate(tmp_reg, instr.getImm32(), code, codePos);
+				emit32(ARMV8A::EOR | dst | (dst << 5) | (tmp_reg << 16), code, codePos);
+				break;
+			case randomx::SuperscalarInstructionType::IMULH_R:
+				emit32(ARMV8A::UMULH | dst | (dst << 5) | (src << 16), code, codePos);
+				break;
+			case randomx::SuperscalarInstructionType::ISMULH_R:
+				emit32(ARMV8A::SMULH | dst | (dst << 5) | (src << 16), code, codePos);
+				break;
+			case randomx::SuperscalarInstructionType::IMUL_RCP:
+				{
+					int32_t offset = (literal_pos - codePos) / 4;
+					offset &= (1 << 19) - 1;
+					literal_pos += 8;
+
+					// ldr tmp_reg, reciprocal
+					emit32(ARMV8A::LDR_LITERAL | tmp_reg | (offset << 5), code, codePos);
+
+					// mul dst, dst, tmp_reg
+					emit32(ARMV8A::MUL | dst | (dst << 5) | (tmp_reg << 16), code, codePos);
+				}
+				break;
+			}
+		}
+
+		nBytes = ((uint8_t*)randomx_calc_dataset_item_aarch64_store_result) - ((uint8_t*)randomx_calc_dataset_item_aarch64_mix);
+		memcpy(code + codePos, (uint8_t*)randomx_calc_dataset_item_aarch64_mix, nBytes);
+		codePos += nBytes;
+
+		// Update registerValue
+		emit32(ARMV8A::MOV_REG | 10 | (prog.getAddressRegister() << 16), code, codePos);
+	}
+
+	nBytes = ((uint8_t*)randomx_calc_dataset_item_aarch64_end) - ((uint8_t*)randomx_calc_dataset_item_aarch64_store_result);
+	memcpy(code + codePos, (uint8_t*)randomx_calc_dataset_item_aarch64_store_result, nBytes);
+	codePos += nBytes;
+
+#ifdef __GNUC__
+	__builtin___clear_cache(reinterpret_cast<char*>(code + CodeSize), reinterpret_cast<char*>(code + codePos));
+#endif
+}
+
+template void JitCompilerA64::generateSuperscalarHash(SuperscalarProgram(&programs)[RANDOMX_CACHE_ACCESSES], std::vector<uint64_t> &reciprocalCache);
 
 size_t JitCompilerA64::getCodeSize()
 {
@@ -512,7 +629,7 @@ void JitCompilerA64::h_IMUL_RCP(Instruction& instr, uint32_t& codePos)
 		const uint32_t offset = (literalPos - k) / 4;
 		emit32(ARMV8A::LDR_LITERAL | tmp_reg | (offset << 5), code, k);
 
-		// mul dst, dst, src
+		// mul dst, dst, tmp_reg
 		emit32(ARMV8A::MUL | dst | (dst << 5) | (tmp_reg << 16), code, k);
 	}
 
@@ -862,8 +979,13 @@ void JitCompilerA64::h_NOP(Instruction& instr, uint32_t& codePos)
 
 void JitCompilerA64::initDataset(randomx_cache* cache, uint8_t* dataset, uint32_t startItem, uint32_t endItem)
 {
-	//for (uint32_t itemNumber = startItem; itemNumber < endItem; ++itemNumber, dataset += CacheLineSize)
-	//	initDatasetItem(cache, dataset, itemNumber);
+/*
+	typedef void (*initDatasetItemFunc)(randomx_cache* cache, uint8_t* dataset, uint32_t itemNumber);
+	initDatasetItemFunc initDatasetItem = (initDatasetItemFunc)(code + CodeSize);
+
+	for (uint32_t itemNumber = startItem; itemNumber < endItem; ++itemNumber, dataset += CacheLineSize)
+		initDatasetItem(cache, dataset, itemNumber);
+*/
 }
 
 }

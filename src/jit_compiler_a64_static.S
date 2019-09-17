@@ -423,42 +423,42 @@ randomx_calc_dataset_item_aarch64:
 
 	# rl[1] = rl[0] ^ superscalarAdd1;
 	ldr	x12, superscalarAdd1
-	eor	x1, x20, x12
+	eor	x1, x0, x12
 
 	# rl[2] = rl[0] ^ superscalarAdd2;
 	ldr	x12, superscalarAdd2
-	eor	x2, x20, x12
+	eor	x2, x0, x12
 
 	# rl[3] = rl[0] ^ superscalarAdd3;
 	ldr	x12, superscalarAdd3
-	eor	x3, x20, x12
+	eor	x3, x0, x12
 
 	# rl[4] = rl[0] ^ superscalarAdd4;
 	ldr	x12, superscalarAdd4
-	eor	x4, x20, x12
+	eor	x4, x0, x12
 
 	# rl[5] = rl[0] ^ superscalarAdd5;
 	ldr	x12, superscalarAdd5
-	eor	x5, x20, x12
+	eor	x5, x0, x12
 
 	# rl[6] = rl[0] ^ superscalarAdd6;
 	ldr	x12, superscalarAdd6
-	eor	x6, x20, x12
+	eor	x6, x0, x12
 
 	# rl[7] = rl[0] ^ superscalarAdd7;
 	ldr	x12, superscalarAdd7
-	eor	x7, x20, x12
+	eor	x7, x0, x12
 
 	b	randomx_calc_dataset_item_aarch64_prefetch
 
-superscalarMul0: .fill 1,8,6364136223846793005
-superscalarAdd1: .fill 1,8,9298411001130361340
-superscalarAdd2: .fill 1,8,12065312585734608966
-superscalarAdd3: .fill 1,8,9306329213124626780
-superscalarAdd4: .fill 1,8,5281919268842080866
-superscalarAdd5: .fill 1,8,10536153434571861004
-superscalarAdd6: .fill 1,8,3398623926847679864
-superscalarAdd7: .fill 1,8,9549104520008361294
+superscalarMul0: .quad 6364136223846793005
+superscalarAdd1: .quad 9298411001130361340
+superscalarAdd2: .quad 12065312585734608966
+superscalarAdd3: .quad 9306329213124626780
+superscalarAdd4: .quad 5281919268842080866
+superscalarAdd5: .quad 10536153434571861004
+superscalarAdd6: .quad 3398623926847679864
+superscalarAdd7: .quad 9549104520008361294
 
 # Prefetch -> SuperScalar hash -> Mix will be repeated N times
 
