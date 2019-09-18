@@ -68,7 +68,6 @@ static const size_t CodeSize = ((uint8_t*)randomx_init_dataset_aarch64_end) - ((
 static const size_t MainLoopBegin = ((uint8_t*)randomx_program_aarch64_main_loop) - ((uint8_t*)randomx_program_aarch64);
 static const size_t PrologueSize = ((uint8_t*)randomx_program_aarch64_vm_instructions) - ((uint8_t*)randomx_program_aarch64);
 static const size_t ImulRcpLiteralsEnd = ((uint8_t*)randomx_program_aarch64_imul_rcp_literals_end) - ((uint8_t*)randomx_program_aarch64);
-static const size_t InstructionsEnd = ((uint8_t*)randomx_program_aarch64_vm_instructions_end) - ((uint8_t*)randomx_program_aarch64);
 
 static const size_t CalcDatasetItemSize =
 	(((uint8_t*)randomx_calc_dataset_item_aarch64_end) - ((uint8_t*)randomx_calc_dataset_item_aarch64)) +
@@ -144,6 +143,63 @@ void JitCompilerA64::generateProgram(Program& program, ProgramConfiguration& con
 	// eor x10, config.readReg0, config.readReg1
 	codePos = ((uint8_t*)randomx_program_aarch64_update_spMix1) - ((uint8_t*)randomx_program_aarch64);
 	emit32(ARMV8A::EOR | 10 | (IntRegMap[config.readReg0] << 5) | (IntRegMap[config.readReg1] << 16), code, codePos);
+
+#ifdef __GNUC__
+	__builtin___clear_cache(reinterpret_cast<char*>(code + MainLoopBegin), reinterpret_cast<char*>(code + codePos));
+#endif
+}
+
+void JitCompilerA64::generateProgramLight(Program& program, ProgramConfiguration& config, uint32_t datasetOffset)
+{
+	uint32_t codePos = MainLoopBegin + 4;
+
+	// and w16, w10, ScratchpadL3Mask64
+	emit32(0x121A0000 | 16 | (10 << 5) | ((Log2(RANDOMX_SCRATCHPAD_L3) - 7) << 10), code, codePos);
+
+	// and w17, w18, ScratchpadL3Mask64
+	emit32(0x121A0000 | 17 | (18 << 5) | ((Log2(RANDOMX_SCRATCHPAD_L3) - 7) << 10), code, codePos);
+
+	codePos = PrologueSize;
+	literalPos = ImulRcpLiteralsEnd;
+	num32bitLiterals = 0;
+
+	for (uint32_t i = 0; i < RegistersCount; ++i)
+		reg_changed_offset[i] = codePos;
+
+	for (uint32_t i = 0; i < program.getSize(); ++i)
+	{
+		Instruction& instr = program(i);
+		instr.src %= RegistersCount;
+		instr.dst %= RegistersCount;
+		(this->*engine[instr.opcode])(instr, codePos);
+	}
+
+	// Update spMix2
+	// eor w18, config.readReg2, config.readReg3
+	emit32(ARMV8A::EOR32 | 18 | (IntRegMap[config.readReg2] << 5) | (IntRegMap[config.readReg3] << 16), code, codePos);
+
+	// Jump back to the main loop
+	const uint32_t offset = (((uint8_t*)randomx_program_aarch64_vm_instructions_end_light) - ((uint8_t*)randomx_program_aarch64)) - codePos;
+	emit32(ARMV8A::B | (offset / 4), code, codePos);
+
+	// and w2, w9, CacheLineAlignMask
+	codePos = (((uint8_t*)randomx_program_aarch64_light_cacheline_align_mask) - ((uint8_t*)randomx_program_aarch64));
+	emit32(0x121A0000 | 2 | (9 << 5) | ((Log2(RANDOMX_DATASET_BASE_SIZE) - 7) << 10), code, codePos);
+
+	// Update spMix1
+	// eor x10, config.readReg0, config.readReg1
+	codePos = ((uint8_t*)randomx_program_aarch64_update_spMix1) - ((uint8_t*)randomx_program_aarch64);
+	emit32(ARMV8A::EOR | 10 | (IntRegMap[config.readReg0] << 5) | (IntRegMap[config.readReg1] << 16), code, codePos);
+
+	// Apply dataset offset
+	codePos = ((uint8_t*)randomx_program_aarch64_light_dataset_offset) - ((uint8_t*)randomx_program_aarch64);
+
+	datasetOffset /= CacheLineSize;
+	const uint32_t imm_lo = datasetOffset & ((1 << 12) - 1);
+	const uint32_t imm_hi = datasetOffset >> 12;
+
+	emit32(ARMV8A::ADD_IMM_LO | 2 | (2 << 5) | (imm_lo << 10), code, codePos);
+	emit32(ARMV8A::ADD_IMM_HI | 2 | (2 << 5) | (imm_hi << 10), code, codePos);
 
 #ifdef __GNUC__
 	__builtin___clear_cache(reinterpret_cast<char*>(code + MainLoopBegin), reinterpret_cast<char*>(code + codePos));

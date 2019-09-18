@@ -254,6 +254,7 @@ int main(int argc, char** argv) {
 					p += nBytes;
 				}
 				fclose(fp);
+				std::cout << "Dataset loaded in " << sw.getElapsed() << " s" << std::endl;
 			}
 			else
 			{
@@ -261,6 +262,8 @@ int main(int argc, char** argv) {
 			}
 
 			if (!read_ok) {
+				Stopwatch dataset_initialization(true);
+
 				uint32_t datasetItemCount = randomx_dataset_item_count();
 				if (initThreadCount > 1) {
 					auto perThread = datasetItemCount / initThreadCount;
@@ -278,6 +281,7 @@ int main(int argc, char** argv) {
 				else {
 					randomx_init_dataset(dataset, cache, 0, datasetItemCount);
 				}
+				std::cout << "Dataset initialized in " << dataset_initialization.getElapsed() << " s" << std::endl;
 
 				fp = fopen("dataset.bin", "wb");
 				if (fp)
@@ -290,7 +294,6 @@ int main(int argc, char** argv) {
 			cache = nullptr;
 			threads.clear();
 		}
-		std::cout << "Memory initialized in " << sw.getElapsed() << " s" << std::endl;
 		std::cout << "Initializing " << threadCount << " virtual machine(s) ..." << std::endl;
 		for (int i = 0; i < threadCount; ++i) {
 			randomx_vm *vm = randomx_create_vm(flags, cache, dataset);

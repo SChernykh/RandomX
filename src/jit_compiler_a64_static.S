@@ -35,6 +35,9 @@
 	.global randomx_program_aarch64_cacheline_align_mask1
 	.global randomx_program_aarch64_cacheline_align_mask2
 	.global randomx_program_aarch64_update_spMix1
+	.global randomx_program_aarch64_vm_instructions_end_light
+	.global randomx_program_aarch64_light_cacheline_align_mask
+	.global randomx_program_aarch64_light_dataset_offset
 	.global randomx_init_dataset_aarch64
 	.global randomx_init_dataset_aarch64_end
 	.global randomx_calc_dataset_item_aarch64
@@ -318,6 +321,7 @@ randomx_program_aarch64_cacheline_align_mask2:
 	and	x10, x10, 1
 	add	x10, x10, x1
 
+randomx_program_aarch64_xor_with_dataset_line:
 	# xor integer registers with dataset data
 	ldp	x18, x19, [x10]
 	eor	x4, x4, x18
@@ -385,6 +389,46 @@ randomx_program_aarch64_update_spMix1:
 	add	sp, sp, 192
 
 	ret
+
+randomx_program_aarch64_vm_instructions_end_light:
+	sub	sp, sp, 96
+	stp	x0, x1, [sp, 64]
+	stp	x2, x30, [sp, 80]
+
+	# mx ^= r[readReg2] ^ r[readReg3];
+	eor	x9, x9, x18
+
+	# mx <-> ma
+	ror	x9, x9, 32
+
+	# x0 -> pointer to cache memory
+	mov	x0, x1
+
+	# x1 -> pointer to output
+	mov	x1, sp
+
+randomx_program_aarch64_light_cacheline_align_mask:
+	# Actual mask will be inserted by JIT compiler
+	and	w2, w9, 1
+
+	# x2 -> item number
+	lsr	x2, x2, 6
+
+randomx_program_aarch64_light_dataset_offset:
+	# Apply dataset offset (filled in by JIT compiler)
+	add	x2, x2, 0
+	add	x2, x2, 0
+
+	bl	randomx_calc_dataset_item_aarch64
+
+	mov	x10, sp
+	ldp	x0, x1, [sp, 64]
+	ldp	x2, x30, [sp, 80]
+	add	sp, sp, 96
+
+	b	randomx_program_aarch64_xor_with_dataset_line
+
+
 
 # Input parameters
 #
