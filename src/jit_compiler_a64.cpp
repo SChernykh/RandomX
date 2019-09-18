@@ -64,7 +64,7 @@ constexpr uint32_t FSQRT       = 0x6EE1F800;
 
 namespace randomx {
 
-static const size_t CodeSize = ((uint8_t*)randomx_program_aarch64_end) - ((uint8_t*)randomx_program_aarch64);
+static const size_t CodeSize = ((uint8_t*)randomx_init_dataset_aarch64_end) - ((uint8_t*)randomx_program_aarch64);
 static const size_t MainLoopBegin = ((uint8_t*)randomx_program_aarch64_main_loop) - ((uint8_t*)randomx_program_aarch64);
 static const size_t PrologueSize = ((uint8_t*)randomx_program_aarch64_vm_instructions) - ((uint8_t*)randomx_program_aarch64);
 static const size_t ImulRcpLiteralsEnd = ((uint8_t*)randomx_program_aarch64_imul_rcp_literals_end) - ((uint8_t*)randomx_program_aarch64);

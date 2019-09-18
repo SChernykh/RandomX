@@ -255,6 +255,10 @@ int main(int argc, char** argv) {
 				}
 				fclose(fp);
 			}
+			else
+			{
+				read_ok = false;
+			}
 
 			if (!read_ok) {
 				uint32_t datasetItemCount = randomx_dataset_item_count();

@@ -389,7 +389,7 @@ randomx_program_aarch64_update_spMix1:
 # Input parameters
 #
 # x0 -> pointer to cache
-# x1 -> pointer to dataset
+# x1 -> pointer to dataset memory at startItem
 # x2 -> start item
 # x3 -> end item
 
@@ -399,12 +399,6 @@ randomx_init_dataset_aarch64:
 
 	# Load pointer to cache memory
 	ldr	x0, [x0]
-
-	# Load pointer to dataset memory
-	ldr	x1, [x1]
-
-	# Set dataset pointer to start item
-	add	x1, x1, x2, lsl 6
 
 randomx_init_dataset_aarch64_main_loop:
 	bl	randomx_calc_dataset_item_aarch64
