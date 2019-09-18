@@ -403,6 +403,9 @@ randomx_init_dataset_aarch64:
 	# Load pointer to dataset memory
 	ldr	x1, [x1]
 
+	# Set dataset pointer to start item
+	add	x1, x1, x2, lsl 6
+
 randomx_init_dataset_aarch64_main_loop:
 	bl	randomx_calc_dataset_item_aarch64
 	add	x1, x1, 64
