@@ -58,15 +58,9 @@ namespace randomx {
 
 		void generateDatasetInitCode() {}
 
-		ProgramFunc* getProgramFunc() {
-			return reinterpret_cast<ProgramFunc*>(code);
-		}
-		DatasetInitFunc* getDatasetInitFunc() {
-			return initDataset;
-		}
-		uint8_t* getCode() {
-			return code;
-		}
+		ProgramFunc* getProgramFunc() { return reinterpret_cast<ProgramFunc*>(code); }
+		DatasetInitFunc* getDatasetInitFunc();
+		uint8_t* getCode() { return code; }
 		size_t getCodeSize();
 
 		void enableWriting() {}
@@ -131,7 +125,5 @@ namespace randomx {
 		void h_CFROUND(Instruction&, uint32_t&);
 		void h_ISTORE(Instruction&, uint32_t&);
 		void h_NOP(Instruction&, uint32_t&);
-
-		static void initDataset(randomx_cache* cache, uint8_t* dataset, uint32_t startBlock, uint32_t endBlock);
 	};
 }

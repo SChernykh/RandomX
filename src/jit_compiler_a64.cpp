@@ -261,6 +261,11 @@ void JitCompilerA64::generateSuperscalarHash(SuperscalarProgram(&programs)[N], s
 
 template void JitCompilerA64::generateSuperscalarHash(SuperscalarProgram(&programs)[RANDOMX_CACHE_ACCESSES], std::vector<uint64_t> &reciprocalCache);
 
+DatasetInitFunc* JitCompilerA64::getDatasetInitFunc()
+{
+	return (DatasetInitFunc*)(code + (((uint8_t*)randomx_init_dataset_aarch64) - ((uint8_t*)randomx_program_aarch64)));
+}
+
 size_t JitCompilerA64::getCodeSize()
 {
 	return CodeSize;
@@ -976,16 +981,4 @@ void JitCompilerA64::h_NOP(Instruction& instr, uint32_t& codePos)
 		INST_HANDLE(ISTORE)
 		INST_HANDLE(NOP)
 	};
-
-void JitCompilerA64::initDataset(randomx_cache* cache, uint8_t* dataset, uint32_t startItem, uint32_t endItem)
-{
-/*
-	typedef void (*initDatasetItemFunc)(randomx_cache* cache, uint8_t* dataset, uint32_t itemNumber);
-	initDatasetItemFunc initDatasetItem = (initDatasetItemFunc)(code + CodeSize);
-
-	for (uint32_t itemNumber = startItem; itemNumber < endItem; ++itemNumber, dataset += CacheLineSize)
-		initDatasetItem(cache, dataset, itemNumber);
-*/
-}
-
 }

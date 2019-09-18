@@ -35,7 +35,8 @@
 	.global randomx_program_aarch64_cacheline_align_mask1
 	.global randomx_program_aarch64_cacheline_align_mask2
 	.global randomx_program_aarch64_update_spMix1
-	.global	randomx_program_aarch64_end
+	.global randomx_init_dataset_aarch64
+	.global randomx_init_dataset_aarch64_end
 	.global randomx_calc_dataset_item_aarch64
 	.global randomx_calc_dataset_item_aarch64_prefetch
 	.global randomx_calc_dataset_item_aarch64_mix
@@ -385,7 +386,36 @@ randomx_program_aarch64_update_spMix1:
 
 	ret
 
-randomx_program_aarch64_end:
+# Input parameters
+#
+# x0 -> pointer to cache
+# x1 -> pointer to dataset
+# x2 -> start item
+# x3 -> end item
+
+randomx_init_dataset_aarch64:
+	# Save x30 (return address)
+	str	x30, [sp, -16]!
+
+	# Load pointer to cache memory
+	ldr	x0, [x0]
+
+	# Load pointer to dataset memory
+	ldr	x1, [x1]
+
+randomx_init_dataset_aarch64_main_loop:
+	bl	randomx_calc_dataset_item_aarch64
+	add	x1, x1, 64
+	add	x2, x2, 1
+	cmp	x2, x3
+	bne	randomx_init_dataset_aarch64_main_loop
+
+	# Restore x30 (return address)
+	ldr	x30, [sp], 16
+
+	ret
+
+randomx_init_dataset_aarch64_end:
 
 # Input parameters
 #
