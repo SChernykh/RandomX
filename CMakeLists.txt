@@ -90,8 +90,6 @@ function(add_flag flag)
   endif()
 endfunction()
 
-add_flag("-O3")
-
 # x86-64
 if (ARCH_ID STREQUAL "x86_64" OR ARCH_ID STREQUAL "x86-64" OR ARCH_ID STREQUAL "amd64")
   list(APPEND randomx_sources
