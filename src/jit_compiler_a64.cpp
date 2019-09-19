@@ -766,7 +766,7 @@ void JitCompilerA64::h_IXOR_M(Instruction& instr, uint32_t& codePos)
 	constexpr uint32_t tmp_reg = 18;
 	emitMemLoad<tmp_reg>(dst, src, instr, code, k);
 
-	// sub dst, dst, tmp_reg
+	// eor dst, dst, tmp_reg
 	emit32(ARMV8A::EOR | dst | (dst << 5) | (tmp_reg << 16), code, k);
 
 	reg_changed_offset[instr.dst] = k;
