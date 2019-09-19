@@ -309,6 +309,8 @@ void JitCompilerA64::generateSuperscalarHash(SuperscalarProgram(&programs)[N], s
 					emit32(ARMV8A::MUL | dst | (dst << 5) | (tmp_reg << 16), code, codePos);
 				}
 				break;
+			default:
+				break;
 			}
 		}
 
