@@ -62,8 +62,8 @@ namespace randomx {
 		uint8_t* getCode() { return code; }
 		size_t getCodeSize();
 
-		void enableWriting() {}
-		void enableExecution() {}
+		void enableWriting();
+		void enableExecution();
 		void enableAll();
 
 	private:

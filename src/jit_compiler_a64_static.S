@@ -337,6 +337,7 @@ randomx_program_aarch64_xor_with_dataset_line:
 	eor	x15, x15, x19
 
 randomx_program_aarch64_update_spMix1:
+	# JIT compiler will replace it with "eor x10, config.readReg0, config.readReg1"
 	eor	x10, x0, x0
 
 	# Store integer registers to scratchpad (spAddr1)
@@ -534,7 +535,8 @@ superscalarAdd7: .quad 9549104520008361294
 # Prefetch -> SuperScalar hash -> Mix will be repeated N times
 
 randomx_calc_dataset_item_aarch64_prefetch:
-	and	x11, x10, 4194303
+	# Actual mask will be inserted by JIT compiler
+	and	x11, x10, 1
 	add	x11, x8, x11, lsl 6
 	prfm	pldl2strm, [x11]
 

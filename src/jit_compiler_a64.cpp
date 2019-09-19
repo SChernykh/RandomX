@@ -85,12 +85,21 @@ JitCompilerA64::JitCompilerA64()
 {
 	memset(reg_changed_offset, 0, sizeof(reg_changed_offset));
 	memcpy(code, (void*) randomx_program_aarch64, CodeSize);
-	enableAll();
 }
 
 JitCompilerA64::~JitCompilerA64()
 {
 	freePagedMemory(code, CodeSize + CalcDatasetItemSize);
+}
+
+void JitCompilerA64::enableWriting()
+{
+	setPagesRW(code, CodeSize + CalcDatasetItemSize);
+}
+
+void JitCompilerA64::enableExecution()
+{
+	setPagesRX(code, CodeSize + CalcDatasetItemSize);
 }
 
 void JitCompilerA64::enableAll()
@@ -211,18 +220,23 @@ void JitCompilerA64::generateSuperscalarHash(SuperscalarProgram(&programs)[N], s
 {
 	uint32_t codePos = CodeSize;
 
-	ptrdiff_t nBytes = ((uint8_t*)randomx_calc_dataset_item_aarch64_prefetch) - ((uint8_t*)randomx_calc_dataset_item_aarch64);
-	memcpy(code + codePos, (uint8_t*)randomx_calc_dataset_item_aarch64, nBytes);
-	codePos += nBytes;
+	uint8_t* p1 = (uint8_t*)randomx_calc_dataset_item_aarch64;
+	uint8_t* p2 = (uint8_t*)randomx_calc_dataset_item_aarch64_prefetch;
+	memcpy(code + codePos, p1, p2 - p1);
+	codePos += p2 - p1;
 
 	num32bitLiterals = 64;
 	constexpr uint32_t tmp_reg = 12;
 
 	for (size_t i = 0; i < N; ++i)
 	{
-		nBytes = ((uint8_t*)randomx_calc_dataset_item_aarch64_mix) - ((uint8_t*)randomx_calc_dataset_item_aarch64_prefetch);
-		memcpy(code + codePos, (uint8_t*)randomx_calc_dataset_item_aarch64_prefetch, nBytes);
-		codePos += nBytes;
+		// and x11, x10, CacheSize / CacheLineSize - 1
+		emit32(0x92400000 | 11 | (10 << 5) | ((Log2(CacheSize / CacheLineSize) - 1) << 10), code, codePos);
+
+		p1 = ((uint8_t*)randomx_calc_dataset_item_aarch64_prefetch) + 4;
+		p2 = (uint8_t*)randomx_calc_dataset_item_aarch64_mix;
+		memcpy(code + codePos, p1, p2 - p1);
+		codePos += p2 - p1;
 
 		SuperscalarProgram& prog = programs[i];
 		const size_t progSize = prog.getSize();
@@ -298,17 +312,19 @@ void JitCompilerA64::generateSuperscalarHash(SuperscalarProgram(&programs)[N], s
 			}
 		}
 
-		nBytes = ((uint8_t*)randomx_calc_dataset_item_aarch64_store_result) - ((uint8_t*)randomx_calc_dataset_item_aarch64_mix);
-		memcpy(code + codePos, (uint8_t*)randomx_calc_dataset_item_aarch64_mix, nBytes);
-		codePos += nBytes;
+		p1 = (uint8_t*)randomx_calc_dataset_item_aarch64_mix;
+		p2 = (uint8_t*)randomx_calc_dataset_item_aarch64_store_result;
+		memcpy(code + codePos, p1, p2 - p1);
+		codePos += p2 - p1;
 
 		// Update registerValue
 		emit32(ARMV8A::MOV_REG | 10 | (prog.getAddressRegister() << 16), code, codePos);
 	}
 
-	nBytes = ((uint8_t*)randomx_calc_dataset_item_aarch64_end) - ((uint8_t*)randomx_calc_dataset_item_aarch64_store_result);
-	memcpy(code + codePos, (uint8_t*)randomx_calc_dataset_item_aarch64_store_result, nBytes);
-	codePos += nBytes;
+	p1 = (uint8_t*)randomx_calc_dataset_item_aarch64_store_result;
+	p2 = (uint8_t*)randomx_calc_dataset_item_aarch64_end;
+	memcpy(code + codePos, p1, p2 - p1);
+	codePos += p2 - p1;
 
 #ifdef __GNUC__
 	__builtin___clear_cache(reinterpret_cast<char*>(code + CodeSize), reinterpret_cast<char*>(code + codePos));
