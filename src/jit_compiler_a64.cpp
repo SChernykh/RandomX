@@ -70,9 +70,19 @@ static const size_t PrologueSize = ((uint8_t*)randomx_program_aarch64_vm_instruc
 static const size_t ImulRcpLiteralsEnd = ((uint8_t*)randomx_program_aarch64_imul_rcp_literals_end) - ((uint8_t*)randomx_program_aarch64);
 
 static const size_t CalcDatasetItemSize =
-	(((uint8_t*)randomx_calc_dataset_item_aarch64_end) - ((uint8_t*)randomx_calc_dataset_item_aarch64)) +
-	((RANDOMX_SUPERSCALAR_LATENCY * 3) + 2) * RANDOMX_CACHE_ACCESSES * 16 +
-	(((uint8_t*)randomx_calc_dataset_item_aarch64_store_result) - ((uint8_t*)randomx_calc_dataset_item_aarch64_prefetch)) * (RANDOMX_CACHE_ACCESSES - 1);
+	// Prologue
+	((uint8_t*)randomx_calc_dataset_item_aarch64_prefetch - (uint8_t*)randomx_calc_dataset_item_aarch64) + 
+	// Main loop
+	RANDOMX_CACHE_ACCESSES * (
+		// Main loop prologue
+		((uint8_t*)randomx_calc_dataset_item_aarch64_mix - ((uint8_t*)randomx_calc_dataset_item_aarch64_prefetch)) + 4 +
+		// Inner main loop (instructions)
+		((RANDOMX_SUPERSCALAR_LATENCY * 3) + 2) * 16 +
+		// Main loop epilogue
+		((uint8_t*)randomx_calc_dataset_item_aarch64_store_result - (uint8_t*)randomx_calc_dataset_item_aarch64_mix) + 4
+	) + 
+	// Epilogue
+	((uint8_t*)randomx_calc_dataset_item_aarch64_end - (uint8_t*)randomx_calc_dataset_item_aarch64_store_result);
 
 constexpr uint32_t IntRegMap[8] = { 4, 5, 6, 7, 12, 13, 14, 15 };
 
