@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "program.hpp"
 #include "reciprocal.h"
 #include "virtual_memory.hpp"
+#include "cpu.hpp"
 
 namespace randomx {
 	/*
@@ -238,6 +239,28 @@ namespace randomx {
 	}
 
 	JitCompilerX86::JitCompilerX86() {
+		// CPU-specific tweaks
+		Cpu cpu;
+		if (strcmp(cpu.manufacturer(), "GenuineIntel") == 0) {
+			Cpu::ProcessorInfo info = cpu.processorInfo();
+
+			// Intel JCC erratum mitigation
+			if (info.family == 6) {
+				const uint32_t model = info.model | (info.ext_model << 4);
+				const uint32_t stepping = info.stepping;
+
+				// Affected CPU models and stepping numbers are taken from https://www.intel.com/content/dam/support/us/en/documents/processors/mitigations-jump-conditional-code-erratum.pdf
+				BranchesWithin32B =
+					((model == 0x4E) && (stepping == 0x3)) ||
+					((model == 0x55) && (stepping == 0x4)) ||
+					((model == 0x5E) && (stepping == 0x3)) ||
+					((model == 0x8E) && (stepping >= 0x9) && (stepping <= 0xC)) ||
+					((model == 0x9E) && (stepping >= 0x9) && (stepping <= 0xD)) ||
+					((model == 0xA6) && (stepping == 0x0)) ||
+					((model == 0xAE) && (stepping == 0xA));
+			}
+		}
+
 		code = (uint8_t*)allocMemoryPages(CodeSize);
 		memcpy(code, codePrologue, prologueSize);
 		memcpy(code + epilogueOffset, codeEpilogue, epilogueSize);

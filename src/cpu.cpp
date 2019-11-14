@@ -53,8 +53,15 @@ namespace randomx {
 		int info[4];
 		cpuid(info, 0);
 		int nIds = info[0];
+
+		manufacturer_string[0] = info[1];
+		manufacturer_string[1] = info[3];
+		manufacturer_string[2] = info[2];
+		manufacturer_string[3] = 0;
+
 		if (nIds >= 0x00000001) {
 			cpuid(info, 0x00000001);
+			processor_info_data = info[0];
 			ssse3_ = (info[2] & (1 << 9)) != 0;
 			aes_ = (info[2] & (1 << 25)) != 0;
 		}

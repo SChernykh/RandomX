@@ -42,8 +42,34 @@ namespace randomx {
 		bool hasAvx2() const {
 			return avx2_;
 		}
+		const char* manufacturer() const {
+			return (const char*) manufacturer_string;
+		}
+
+		struct ProcessorInfo
+		{
+			unsigned int stepping : 4;
+			unsigned int model : 4;
+			unsigned int family : 4;
+			unsigned int processor_type : 2;
+			unsigned int reserved1 : 2;
+			unsigned int ext_model : 4;
+			unsigned int ext_family : 8;
+			unsigned int reserved2 : 4;
+		};
+
+		ProcessorInfo processorInfo() const {
+			return processor_info;
+		}
+
 	private:
 		bool aes_, ssse3_, avx2_;
+		int manufacturer_string[4];
+		union
+		{
+			ProcessorInfo processor_info;
+			int processor_info_data;
+		};
 	};
 
 }
