@@ -122,11 +122,14 @@ void mine(randomx_vm* vm, std::atomic<uint32_t>& atomicNonce, AtomicHash& result
 	void* noncePtr = blockTemplate + 39;
 	auto nonce = atomicNonce.fetch_add(1);
 
+	store32(noncePtr, nonce);
+	randomx_calculate_hash_first(vm, blockTemplate, sizeof(blockTemplate));
+
 	while (nonce < noncesCount) {
-		store32(noncePtr, nonce);
-		randomx_calculate_hash(vm, blockTemplate, sizeof(blockTemplate), &hash);
-		result.xorWith(hash);
 		nonce = atomicNonce.fetch_add(1);
+		store32(noncePtr, nonce);
+		randomx_calculate_hash_next(vm, blockTemplate, sizeof(blockTemplate), &hash);
+		result.xorWith(hash);
 	}
 }
 
@@ -158,7 +161,7 @@ int main(int argc, char** argv) {
 
 	store32(&seed, seedValue);
 
-	std::cout << "RandomX benchmark v1.1.5" << std::endl;
+	std::cout << "RandomX benchmark v1.1.7" << std::endl;
 
 	if (help) {
 		printUsage(argv[0]);
