@@ -20,32 +20,32 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{3346A4AD-C438-4324-8B77-47A16452954B}</ProjectGuid>
-    <RootNamespace>randomx</RootNamespace>
+    <ProjectGuid>{F207EC8C-C55F-46C0-8851-887A71574F54}</ProjectGuid>
+    <RootNamespace>runtimedistr</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -53,7 +53,6 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -71,19 +70,19 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>false</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -93,15 +92,12 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <Profile>false</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -110,87 +106,23 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AssemblerOutput>AssemblyCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <Profile>false</Profile>
-      <AdditionalOptions>
-      </AdditionalOptions>
-      <StackReserveSize>4194304</StackReserveSize>
     </Link>
-    <PreBuildEvent>
-      <Command>powershell -ExecutionPolicy Bypass -File .\h2inc.ps1 ..\src\configuration.h &gt; ..\src\asm\configuration.asm
-SET ERRORLEVEL = 0</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\allocator.cpp" />
-    <ClCompile Include="..\src\argon2_core.c" />
-    <ClCompile Include="..\src\argon2_ref.c" />
-    <ClCompile Include="..\src\assembly_generator_x86.cpp" />
-    <ClCompile Include="..\src\blake2_generator.cpp" />
-    <ClCompile Include="..\src\blake2\blake2b.c" />
-    <ClCompile Include="..\src\vm_compiled_light.cpp" />
-    <ClCompile Include="..\src\vm_compiled.cpp" />
-    <ClCompile Include="..\src\dataset.cpp" />
-    <ClCompile Include="..\src\aes_hash.cpp" />
-    <ClCompile Include="..\src\instruction.cpp" />
-    <ClCompile Include="..\src\instructions_portable.cpp" />
-    <ClCompile Include="..\src\vm_interpreted_light.cpp" />
-    <ClCompile Include="..\src\vm_interpreted.cpp" />
-    <ClCompile Include="..\src\jit_compiler_x86.cpp" />
-    <ClCompile Include="..\src\randomx.cpp" />
-    <ClCompile Include="..\src\superscalar.cpp" />
-    <ClCompile Include="..\src\reciprocal.c" />
-    <ClCompile Include="..\src\soft_aes.cpp" />
-    <ClCompile Include="..\src\virtual_machine.cpp" />
-    <ClCompile Include="..\src\virtual_memory.cpp" />
+    <ClCompile Include="..\src\tests\runtime-distr.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="..\src\jit_compiler_x86_static.asm" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\src\allocator.hpp" />
-    <ClInclude Include="..\src\argon2.h" />
-    <ClInclude Include="..\src\argon2_core.h" />
-    <ClInclude Include="..\src\assembly_generator_x86.hpp" />
-    <ClInclude Include="..\src\blake2\blake2-impl.h" />
-    <ClInclude Include="..\src\blake2\blake2.h" />
-    <ClInclude Include="..\src\blake2\blamka-round-ref.h" />
-    <ClInclude Include="..\src\blake2\endian.h" />
-    <ClInclude Include="..\src\blake2_generator.hpp" />
-    <ClInclude Include="..\src\common.hpp" />
-    <ClInclude Include="..\src\jit_compiler.hpp" />
-    <ClInclude Include="..\src\jit_compiler_a64.hpp" />
-    <ClInclude Include="..\src\jit_compiler_fallback.hpp" />
-    <ClInclude Include="..\src\vm_compiled_light.hpp" />
-    <ClInclude Include="..\src\vm_compiled.hpp" />
-    <ClInclude Include="..\src\configuration.h" />
-    <ClInclude Include="..\src\dataset.hpp" />
-    <ClInclude Include="..\src\aes_hash.hpp" />
-    <ClInclude Include="..\src\instruction.hpp" />
-    <ClInclude Include="..\src\instruction_weights.hpp" />
-    <ClInclude Include="..\src\vm_interpreted_light.hpp" />
-    <ClInclude Include="..\src\vm_interpreted.hpp" />
-    <ClInclude Include="..\src\intrin_portable.h" />
-    <ClInclude Include="..\src\jit_compiler_x86_static.hpp" />
-    <ClInclude Include="..\src\jit_compiler_x86.hpp" />
-    <ClInclude Include="..\src\randomx.h" />
-    <ClInclude Include="..\src\superscalar.hpp" />
-    <ClInclude Include="..\src\program.hpp" />
-    <ClInclude Include="..\src\reciprocal.h" />
-    <ClInclude Include="..\src\soft_aes.h" />
-    <ClInclude Include="..\src\superscalar_program.hpp" />
-    <ClInclude Include="..\src\virtual_machine.hpp" />
-    <ClInclude Include="..\src\virtual_memory.hpp" />
+    <ProjectReference Include="randomx.vcxproj">
+      <Project>{3346a4ad-c438-4324-8b77-47a16452954b}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>

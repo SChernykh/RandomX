@@ -1,20 +1,29 @@
 /*
-Copyright (c) 2018 tevador
+Copyright (c) 2018-2019, tevador <tevador@gmail.com>
 
-This file is part of RandomX.
+All rights reserved.
 
-RandomX is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+	* Redistributions of source code must retain the above copyright
+	  notice, this list of conditions and the following disclaimer.
+	* Redistributions in binary form must reproduce the above copyright
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
+	* Neither the name of the copyright holder nor the
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
-RandomX is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with RandomX.  If not, see<http://www.gnu.org/licenses/>.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once
@@ -103,11 +112,6 @@ namespace randomx {
 		double hi;
 	};
 
-	struct RegisterUsage {
-		int32_t lastUsed;
-		int32_t count;
-	};
-
 	constexpr uint32_t ScratchpadL1 = RANDOMX_SCRATCHPAD_L1 / sizeof(int_reg_t);
 	constexpr uint32_t ScratchpadL2 = RANDOMX_SCRATCHPAD_L2 / sizeof(int_reg_t);
 	constexpr uint32_t ScratchpadL3 = RANDOMX_SCRATCHPAD_L3 / sizeof(int_reg_t);
@@ -121,21 +125,6 @@ namespace randomx {
 	constexpr int RegisterCountFlt = RegistersCount / 2;
 	constexpr int RegisterNeedsDisplacement = 5; //x86 r13 register
 	constexpr int RegisterNeedsSib = 4; //x86 r12 register
-
-	inline int getConditionRegister(RegisterUsage(&registerUsage)[RegistersCount]) {
-		int min = INT_MAX;
-		int minCount = 0;
-		int minIndex;
-		//prefer registers that have been used as a condition register fewer times
-		for (unsigned i = 0; i < RegistersCount; ++i) {
-			if (registerUsage[i].lastUsed < min || (registerUsage[i].lastUsed == min && registerUsage[i].count < minCount)) {
-				min = registerUsage[i].lastUsed;
-				minCount = registerUsage[i].count;
-				minIndex = i;
-			}
-		}
-		return minIndex;
-	}
 
 	inline bool isPowerOf2(uint64_t x) {
 		return (x & (x - 1)) == 0;

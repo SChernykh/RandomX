@@ -1,20 +1,29 @@
 /*
-Copyright (c) 2019 tevador
+Copyright (c) 2018-2019, tevador <tevador@gmail.com>
 
-This file is part of RandomX.
+All rights reserved.
 
-RandomX is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+	* Redistributions of source code must retain the above copyright
+	  notice, this list of conditions and the following disclaimer.
+	* Redistributions in binary form must reproduce the above copyright
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
+	* Neither the name of the copyright holder nor the
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
-RandomX is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with RandomX.  If not, see<http://www.gnu.org/licenses/>.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <fstream>
@@ -64,7 +73,7 @@ void printUsage(const char* executable) {
 	std::cout << "Usage: " << executable << " [OPTIONS]" << std::endl;
 	std::cout << "Supported options:" << std::endl;
 	std::cout << "  --help        shows this message" << std::endl;
-	std::cout << "  --mine        mining mode: 2 GiB" << std::endl;
+	std::cout << "  --mine        mining mode: 2080 MiB" << std::endl;
 	std::cout << "  --verify      verification mode: 256 MiB" << std::endl;
 	std::cout << "  --jit         x86-64 JIT compiled mode (default: interpreter)" << std::endl;
 	std::cout << "  --largePages  use large pages" << std::endl;
@@ -165,6 +174,9 @@ int main(int argc, char** argv) {
 		Stopwatch sw(true);
 		cache = randomx_alloc_cache(flags);
 		if (cache == nullptr) {
+			if (jit) {
+				throw std::runtime_error("JIT compilation is not supported or cache allocation failed");
+			}
 			throw std::runtime_error("Cache allocation failed");
 		}
 		randomx_init_cache(cache, &seed, sizeof(seed));
@@ -229,7 +241,7 @@ int main(int argc, char** argv) {
 		std::cout << "Calculated result: ";
 		result.print(std::cout);
 		if (noncesCount == 1000 && seedValue == 0)
-			std::cout << "Reference result:  d908c4ce0329e2e104c08c3a76b427dd9dad3622a04b06af965cd00cd62b2d2e" << std::endl;
+			std::cout << "Reference result:  669ae4f2e5e2c0d9cc232ff2c37d41ae113fa302bbf983d9f3342879831b4edf" << std::endl;
 		if (!miningMode) {
 			std::cout << "Performance: " << 1000 * elapsed / noncesCount << " ms per hash" << std::endl;
 		}

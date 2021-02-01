@@ -1,20 +1,29 @@
 /*
-Copyright (c) 2018 tevador
+Copyright (c) 2018-2019, tevador <tevador@gmail.com>
 
-This file is part of RandomX.
+All rights reserved.
 
-RandomX is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+	* Redistributions of source code must retain the above copyright
+	  notice, this list of conditions and the following disclaimer.
+	* Redistributions in binary form must reproduce the above copyright
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
+	* Neither the name of the copyright holder nor the
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
-RandomX is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with RandomX.  If not, see<http://www.gnu.org/licenses/>.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /* Original code from Argon2 reference source code package used under CC0 Licence
@@ -67,13 +76,13 @@ typedef struct block_ { uint64_t v[ARGON2_QWORDS_IN_BLOCK]; } block;
 /*****************Functions that work with the block******************/
 
 /* Initialize each byte of the block with @in */
-void init_block_value(block *b, uint8_t in);
+void rxa2_init_block_value(block *b, uint8_t in);
 
 /* Copy block @src to block @dst */
-void copy_block(block *dst, const block *src);
+void rxa2_copy_block(block *dst, const block *src);
 
 /* XOR @src onto @dst bytewise */
-void xor_block(block *dst, const block *src);
+void rxa2_xor_block(block *dst, const block *src);
 
 /*
  * Argon2 instance: memory pointer, number of passes, amount of memory, type,
@@ -122,7 +131,7 @@ typedef struct Argon2_thread_data {
  * @param num the number of elements to be allocated
  * @return ARGON2_OK if @memory is a valid pointer and memory is allocated
  */
-int allocate_memory(const argon2_context *context, uint8_t **memory,
+int rxa2_allocate_memory(const argon2_context *context, uint8_t **memory,
 	size_t num, size_t size);
 
 /*
@@ -133,7 +142,7 @@ int allocate_memory(const argon2_context *context, uint8_t **memory,
  * @param size the size in bytes for each element to be deallocated
  * @param num the number of elements to be deallocated
  */
-void free_memory(const argon2_context *context, uint8_t *memory,
+void rxa2_free_memory(const argon2_context *context, uint8_t *memory,
 	size_t num, size_t size);
 
 /* Function that securely cleans the memory. This ignores any flags set
@@ -141,14 +150,14 @@ void free_memory(const argon2_context *context, uint8_t *memory,
  * @param mem Pointer to the memory
  * @param s Memory size in bytes
  */
-void secure_wipe_memory(void *v, size_t n);
+void rxa2_secure_wipe_memory(void *v, size_t n);
 
 /* Function that securely clears the memory if FLAG_clear_internal_memory is
  * set. If the flag isn't set, this function does nothing.
  * @param mem Pointer to the memory
  * @param s Memory size in bytes
  */
-void clear_internal_memory(void *v, size_t n);
+void rxa2_clear_internal_memory(void *v, size_t n);
 
 /*
  * Computes absolute position of reference block in the lane following a skewed
@@ -160,7 +169,7 @@ void clear_internal_memory(void *v, size_t n);
  * If so we can reference the current segment
  * @pre All pointers must be valid
  */
-uint32_t index_alpha(const argon2_instance_t *instance,
+uint32_t rxa2_index_alpha(const argon2_instance_t *instance,
 	const argon2_position_t *position, uint32_t pseudo_rand,
 	int same_lane);
 
@@ -171,7 +180,7 @@ uint32_t index_alpha(const argon2_instance_t *instance,
  * @return ARGON2_OK if everything is all right, otherwise one of error codes
  * (all defined in <argon2.h>
  */
-int validate_inputs(const argon2_context *context);
+int rxa2_validate_inputs(const argon2_context *context);
 
 /*
  * Hashes all the inputs into @a blockhash[PREHASH_DIGEST_LENGTH], clears
@@ -183,7 +192,7 @@ int validate_inputs(const argon2_context *context);
  * @pre    @a blockhash must have at least @a PREHASH_DIGEST_LENGTH bytes
  * allocated
  */
-void initial_hash(uint8_t *blockhash, argon2_context *context,
+void rxa2_initial_hash(uint8_t *blockhash, argon2_context *context,
 	argon2_type type);
 
 /*
@@ -192,7 +201,7 @@ void initial_hash(uint8_t *blockhash, argon2_context *context,
  * @param blockhash Pointer to the pre-hashing digest
  * @pre blockhash must point to @a PREHASH_SEED_LENGTH allocated values
  */
-void fill_first_blocks(uint8_t *blockhash, const argon2_instance_t *instance);
+void rxa2_fill_first_blocks(uint8_t *blockhash, const argon2_instance_t *instance);
 
 /*
  * Function allocates memory, hashes the inputs with Blake,  and creates first
@@ -204,7 +213,7 @@ void fill_first_blocks(uint8_t *blockhash, const argon2_instance_t *instance);
  * @return Zero if successful, -1 if memory failed to allocate. @context->state
  * will be modified if successful.
  */
-int argon_initialize(argon2_instance_t *instance, argon2_context *context);
+int rxa2_argon_initialize(argon2_instance_t *instance, argon2_context *context);
 
 /*
  * XORing the last block of each lane, hashing it, making the tag. Deallocates
@@ -217,7 +226,7 @@ int argon_initialize(argon2_instance_t *instance, argon2_context *context);
  * @pre if context->free_cbk is not NULL, it should point to a function that
  * deallocates memory
  */
-void finalize(const argon2_context *context, argon2_instance_t *instance);
+void rxa2_finalize(const argon2_context *context, argon2_instance_t *instance);
 
 /*
  * Function that fills the segment using previous segments also from other
@@ -227,7 +236,7 @@ void finalize(const argon2_context *context, argon2_instance_t *instance);
  * @param position Current position
  * @pre all block pointers must be valid
  */
-void fill_segment(const argon2_instance_t *instance,
+void rxa2_fill_segment(const argon2_instance_t *instance,
 	argon2_position_t position);
 
 /*
@@ -236,7 +245,7 @@ void fill_segment(const argon2_instance_t *instance,
  * @param instance Pointer to the current instance
  * @return ARGON2_OK if successful, @context->state
  */
-int fill_memory_blocks(argon2_instance_t *instance);
+int rxa2_fill_memory_blocks(argon2_instance_t *instance);
 
 #if defined(__cplusplus)
 }

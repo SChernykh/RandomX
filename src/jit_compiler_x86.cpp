@@ -1,20 +1,29 @@
 /*
-Copyright (c) 2018 tevador
+Copyright (c) 2018-2019, tevador <tevador@gmail.com>
 
-This file is part of RandomX.
+All rights reserved.
 
-RandomX is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+	* Redistributions of source code must retain the above copyright
+	  notice, this list of conditions and the following disclaimer.
+	* Redistributions in binary form must reproduce the above copyright
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
+	* Neither the name of the copyright holder nor the
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
-RandomX is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with RandomX.  If not, see<http://www.gnu.org/licenses/>.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdexcept>
@@ -258,8 +267,7 @@ namespace randomx {
 	void JitCompilerX86::generateProgramPrologue(Program& prog, ProgramConfiguration& pcfg) {
 		instructionOffsets.clear();
 		for (unsigned i = 0; i < 8; ++i) {
-			registerUsage[i].lastUsed = -1;
-			registerUsage[i].count = 0;
+			registerUsage[i] = -1;
 		}
 		codePos = prologueSize;
 		memcpy(code + codePos - 48, &pcfg.eMask, sizeof(pcfg.eMask));
@@ -426,7 +434,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_IADD_RS(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		emit(REX_LEA);
 		if (instr.dst == RegisterNeedsDisplacement)
 			emitByte(0xac);
@@ -438,7 +446,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_IADD_M(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		if (instr.src != instr.dst) {
 			genAddressReg(instr);
 			emit(REX_ADD_RM);
@@ -457,7 +465,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_ISUB_R(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		if (instr.src != instr.dst) {
 			emit(REX_SUB_RR);
 			emitByte(0xc0 + 8 * instr.dst + instr.src);
@@ -470,7 +478,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_ISUB_M(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		if (instr.src != instr.dst) {
 			genAddressReg(instr);
 			emit(REX_SUB_RM);
@@ -485,7 +493,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_IMUL_R(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		if (instr.src != instr.dst) {
 			emit(REX_IMUL_RR);
 			emitByte(0xc0 + 8 * instr.dst + instr.src);
@@ -498,7 +506,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_IMUL_M(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		if (instr.src != instr.dst) {
 			genAddressReg(instr);
 			emit(REX_IMUL_RM);
@@ -513,7 +521,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_IMULH_R(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		emit(REX_MOV_RR64);
 		emitByte(0xc0 + instr.dst);
 		emit(REX_MUL_R);
@@ -523,7 +531,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_IMULH_M(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		if (instr.src != instr.dst) {
 			genAddressReg(instr, false);
 			emit(REX_MOV_RR64);
@@ -542,7 +550,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_ISMULH_R(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		emit(REX_MOV_RR64);
 		emitByte(0xc0 + instr.dst);
 		emit(REX_MUL_R);
@@ -552,7 +560,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_ISMULH_M(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		if (instr.src != instr.dst) {
 			genAddressReg(instr, false);
 			emit(REX_MOV_RR64);
@@ -573,7 +581,7 @@ namespace randomx {
 	void JitCompilerX86::h_IMUL_RCP(Instruction& instr, int i) {
 		uint64_t divisor = instr.getImm32();
 		if (!isPowerOf2(divisor)) {
-			registerUsage[instr.dst].lastUsed = i;
+			registerUsage[instr.dst] = i;
 			emit(MOV_RAX_I);
 			emit64(randomx_reciprocal_fast(divisor));
 			emit(REX_IMUL_RM);
@@ -582,13 +590,13 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_INEG_R(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		emit(REX_NEG);
 		emitByte(0xd8 + instr.dst);
 	}
 
 	void JitCompilerX86::h_IXOR_R(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		if (instr.src != instr.dst) {
 			emit(REX_XOR_RR);
 			emitByte(0xc0 + 8 * instr.dst + instr.src);
@@ -601,7 +609,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_IXOR_M(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		if (instr.src != instr.dst) {
 			genAddressReg(instr);
 			emit(REX_XOR_RM);
@@ -616,7 +624,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_IROR_R(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		if (instr.src != instr.dst) {
 			emit(REX_MOV_RR);
 			emitByte(0xc8 + instr.src);
@@ -631,7 +639,7 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_IROL_R(Instruction& instr, int i) {
-		registerUsage[instr.dst].lastUsed = i;
+		registerUsage[instr.dst] = i;
 		if (instr.src != instr.dst) {
 			emit(REX_MOV_RR);
 			emitByte(0xc8 + instr.src);
@@ -647,8 +655,8 @@ namespace randomx {
 
 	void JitCompilerX86::h_ISWAP_R(Instruction& instr, int i) {
 		if (instr.src != instr.dst) {
-			registerUsage[instr.dst].lastUsed = i;
-			registerUsage[instr.src].lastUsed = i;
+			registerUsage[instr.dst] = i;
+			registerUsage[instr.src] = i;
 			emit(REX_XCHG);
 			emitByte(0xc0 + instr.src + 8 * instr.dst);
 		}
@@ -730,9 +738,8 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_CBRANCH(Instruction& instr, int i) {
-		int reg = getConditionRegister(registerUsage);
-		int target = registerUsage[reg].lastUsed + 1;
-		registerUsage[reg].count++;
+		int reg = instr.dst;
+		int target = registerUsage[reg] + 1;
 		emit(REX_ADD_I);
 		emitByte(0xc0 + reg);
 		int shift = instr.getModCond() + ConditionOffset;
@@ -747,7 +754,7 @@ namespace randomx {
 		emit32(instructionOffsets[target] - (codePos + 4));
 		//mark all registers as used
 		for (unsigned j = 0; j < RegistersCount; ++j) {
-			registerUsage[j].lastUsed = i;
+			registerUsage[j] = i;
 		}
 	}
 
