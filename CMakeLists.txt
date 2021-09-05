@@ -26,36 +26,69 @@
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 2.8.12)
 
 project(RandomX)
 
 set(randomx_sources
 src/aes_hash.cpp
+src/allocator.cpp
+src/allocator.hpp
+src/argon2.h
+src/argon2_avx2.c
+src/argon2_core.c
+src/argon2_core.h
 src/argon2_ref.c
 src/argon2_ssse3.c
-src/argon2_avx2.c
-src/bytecode_machine.cpp
-src/cpu.cpp
-src/dataset.cpp
-src/soft_aes.cpp
-src/virtual_memory.cpp
-src/vm_interpreted.cpp
-src/allocator.cpp
 src/assembly_generator_x86.cpp
-src/instruction.cpp
-src/randomx.cpp
-src/superscalar.cpp
-src/vm_compiled.cpp
-src/vm_interpreted_light.cpp
-src/argon2_core.c
+src/assembly_generator_x86.hpp
 src/blake2_generator.cpp
+src/blake2_generator.hpp
+src/bytecode_machine.cpp
+src/bytecode_machine.hpp
+src/common.hpp
+src/configuration.h
+src/cpu.cpp
+src/cpu.hpp
+src/dataset.cpp
+src/dataset.hpp
+src/instruction.cpp
+src/instruction.hpp
 src/instructions_portable.cpp
+src/instruction_weights.hpp
+src/intrin_portable.h
+src/jit_compiler.hpp
+src/jit_compiler_fallback.hpp
+src/program.hpp
+src/randomx.cpp
+src/randomx.h
 src/reciprocal.c
+src/reciprocal.h
+src/soft_aes.cpp
+src/soft_aes.h
+src/superscalar.cpp
+src/superscalar.hpp
+src/superscalar_program.hpp
 src/virtual_machine.cpp
+src/virtual_machine.hpp
+src/virtual_memory.cpp
+src/virtual_memory.hpp
+src/vm_compiled.cpp
+src/vm_compiled.hpp
 src/vm_compiled_light.cpp
-src/blake2/blake2b.c)
-
+src/vm_compiled_light.hpp
+src/vm_interpreted.cpp
+src/vm_interpreted.hpp
+src/vm_interpreted_light.cpp
+src/vm_interpreted_light.hpp
+src/blake2/blake2-impl.h
+src/blake2/blake2.h
+src/blake2/blake2b.c
+src/blake2/blamka-round-avx2.h
+src/blake2/blamka-round-ref.h
+src/blake2/blamka-round-ssse3.h
+src/blake2/endian.h
+)
 if(NOT ARCH_ID)
   # allow cross compiling
   if(CMAKE_SYSTEM_PROCESSOR STREQUAL "")
@@ -98,9 +131,21 @@ endfunction()
 # x86-64
 if(ARCH_ID STREQUAL "x86_64" OR ARCH_ID STREQUAL "x86-64" OR ARCH_ID STREQUAL "amd64")
   list(APPEND randomx_sources
-    src/jit_compiler_x86.cpp)
+    src/jit_compiler_x86.cpp
+    src/jit_compiler_x86.hpp
+    src/jit_compiler_x86_static.hpp
+)
 
   if(MSVC)
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /W0 /MTd")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W0 /MTd")
+
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /W0 /MT")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /W0 /MT")
+
+    set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} /W0 /MT /DRELWITHDEBINFO")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /W0 /MT /DRELWITHDEBINFO")
+
     enable_language(ASM_MASM)
     list(APPEND randomx_sources src/jit_compiler_x86_static.asm)
 
@@ -112,8 +157,6 @@ if(ARCH_ID STREQUAL "x86_64" OR ARCH_ID STREQUAL "x86-64" OR ARCH_ID STREQUAL "a
       COMMAND powershell -ExecutionPolicy Bypass -File h2inc.ps1 ..\\src\\configuration.h > ..\\src\\asm\\configuration.asm SET ERRORLEVEL = 0
       COMMENT "Generating configuration.asm at ${CMAKE_CURRENT_SOURCE_DIR}"
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/vcxproj)
-    add_custom_target(generate-asm
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/asm/configuration.asm)
   else()
     list(APPEND randomx_sources src/jit_compiler_x86_static.S)
 
@@ -150,7 +193,10 @@ endif()
 if(ARM_ID STREQUAL "aarch64" OR ARM_ID STREQUAL "arm64" OR ARM_ID STREQUAL "armv8-a")
   list(APPEND randomx_sources
     src/jit_compiler_a64_static.S
-    src/jit_compiler_a64.cpp)
+    src/jit_compiler_a64.cpp
+    src/jit_compiler_a64.hpp
+    src/jit_compiler_a64_static.hpp
+  )
   # cheat because cmake and ccache hate each other
   set_property(SOURCE src/jit_compiler_a64_static.S PROPERTY LANGUAGE C)
   set_property(SOURCE src/jit_compiler_a64_static.S PROPERTY XCODE_EXPLICIT_FILE_TYPE sourcecode.asm)
@@ -174,12 +220,8 @@ set(RANDOMX_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src" CACHE STRING "RandomX Incl
 
 add_library(randomx ${randomx_sources})
 
-if(TARGET generate-asm)
-  add_dependencies(randomx generate-asm)
-endif()
-
 set_property(TARGET randomx PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET randomx PROPERTY CXX_STANDARD 11)
+set_property(TARGET randomx PROPERTY CXX_STANDARD 14)
 set_property(TARGET randomx PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET randomx PROPERTY PUBLIC_HEADER src/randomx.h)
 
@@ -188,46 +230,3 @@ install(TARGETS randomx
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-add_executable(randomx-tests
-  src/tests/tests.cpp)
-target_link_libraries(randomx-tests
-  PRIVATE randomx)
-set_property(TARGET randomx-tests PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET randomx-tests PROPERTY CXX_STANDARD 11)
-
-add_executable(randomx-codegen
-  src/tests/code-generator.cpp)
-target_link_libraries(randomx-codegen
-  PRIVATE randomx)
-
-set_property(TARGET randomx-codegen PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET randomx-codegen PROPERTY CXX_STANDARD 11)
-
-if(NOT Threads_FOUND AND UNIX AND NOT APPLE)
-  set(THREADS_PREFER_PTHREAD_FLAG ON)
-  find_package(Threads)
-endif()
-
-add_executable(randomx-benchmark
-  src/tests/benchmark.cpp
-  src/tests/affinity.cpp)
-target_link_libraries(randomx-benchmark
-  PRIVATE randomx
-  PRIVATE ${CMAKE_THREAD_LIBS_INIT})
-
-include(CheckCXXSourceCompiles)
-check_cxx_source_compiles("
-#include <cstdint>
-#include <atomic>
-int main() {
-  std::atomic<uint64_t> a;
-  a.is_lock_free();
-}" HAVE_CXX_ATOMICS)
-
-if(NOT HAVE_CXX_ATOMICS)
-  target_link_libraries(randomx-benchmark
-    PRIVATE "atomic")
-endif()
-set_property(TARGET randomx-benchmark PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET randomx-benchmark PROPERTY CXX_STANDARD 11)
