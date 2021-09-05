@@ -28,6 +28,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4324)
+#endif
+
 #include <cstdint>
 #include "common.hpp"
 #include "program.hpp"
