@@ -722,11 +722,11 @@ static const char* platformError = "Platform doesn't support hardware AES";
 
 #include <stdexcept>
 
-FORCE_INLINE rx_vec_i128 rx_aesenc_vec_i128(rx_vec_i128 v, rx_vec_i128 rkey) {
+FORCE_INLINE rx_vec_i128 rx_aesenc_vec_i128(rx_vec_i128, rx_vec_i128) {
 	throw std::runtime_error(platformError);
 }
 
-FORCE_INLINE rx_vec_i128 rx_aesdec_vec_i128(rx_vec_i128 v, rx_vec_i128 rkey) {
+FORCE_INLINE rx_vec_i128 rx_aesdec_vec_i128(rx_vec_i128, rx_vec_i128) {
 	throw std::runtime_error(platformError);
 }
 

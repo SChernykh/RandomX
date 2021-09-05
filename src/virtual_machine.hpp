@@ -39,8 +39,8 @@ public:
 	virtual void allocate() = 0;
 	virtual void getFinalResult(void* out, size_t outSize) = 0;
 	virtual void hashAndFill(void* out, size_t outSize, uint64_t *fill_state) = 0;
-	virtual void setDataset(randomx_dataset* dataset) { }
-	virtual void setCache(randomx_cache* cache) { }
+	virtual void setDataset(randomx_dataset* /*dataset*/) { }
+	virtual void setCache(randomx_cache* /*cache*/) { }
 	virtual void initScratchpad(void* seed) = 0;
 	virtual void run(void* seed) = 0;
 	void resetRoundingMode();
