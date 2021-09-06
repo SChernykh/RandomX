@@ -28,6 +28,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wuninitialized"
+#endif
+
 #include <cstdint>
 #include "blake2/endian.h"
 
@@ -749,3 +754,7 @@ uint64_t mulh(uint64_t, uint64_t);
 int64_t smulh(int64_t, int64_t);
 uint64_t rotl(uint64_t, unsigned int);
 uint64_t rotr(uint64_t, unsigned int);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
