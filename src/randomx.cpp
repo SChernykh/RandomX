@@ -130,9 +130,7 @@ extern "C" {
 
 	void randomx_release_cache(randomx_cache* cache) {
 		assert(cache != nullptr);
-		if (cache->memory != nullptr) {
-			cache->dealloc(cache);
-		}
+		cache->dealloc(cache);
 		delete cache;
 	}
 
