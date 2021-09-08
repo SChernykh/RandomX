@@ -40,3 +40,4 @@ void setPagesRX(void*, std::size_t);
 void setPagesRWX(void*, std::size_t);
 void* allocLargePagesMemory(std::size_t);
 void freePagedMemory(void*, std::size_t);
+void flushInstructionCache(void* begin, void* end);

@@ -34,6 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <windows.h>
 #else
 #ifdef __APPLE__
+#include <libkern/OSCacheControl.h>
 #include <mach/vm_statistics.h>
 #include <TargetConditionals.h>
 # if defined(__aarch64__) && TARGET_OS_OSX
@@ -193,5 +194,18 @@ void freePagedMemory(void* ptr, std::size_t bytes) {
 	VirtualFree(ptr, 0, MEM_RELEASE);
 #else
 	munmap(ptr, bytes);
+#endif
+}
+
+void flushInstructionCache(void* begin, void* end)
+{
+	const size_t size = static_cast<size_t>(reinterpret_cast<char*>(end) - reinterpret_cast<char*>(begin));
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+	::FlushInstructionCache(GetCurrentProcess(), begin, size);
+#elif defined(__APPLE__)
+	sys_icache_invalidate(begin, size);
+#elif defined(__GNUC__) || defined(HAVE_BUILTIN_CLEAR_CACHE)
+	__builtin___clear_cache(reinterpret_cast<char*>(begin), reinterpret_cast<char*>(end));
 #endif
 }

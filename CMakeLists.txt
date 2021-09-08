@@ -112,6 +112,7 @@ endif()
 
 include(CheckCXXCompilerFlag)
 include(CheckCCompilerFlag)
+include(CheckSymbolExists)
 
 function(add_flag flag)
   string(REPLACE "-" "_" supported_cxx ${flag}_cxx)
@@ -214,6 +215,11 @@ if(ARM_ID STREQUAL "aarch64" OR ARM_ID STREQUAL "arm64" OR ARM_ID STREQUAL "armv
     # default build has hardware AES enabled (software AES can be selected at runtime)
     add_flag("-march=armv8-a+crypto")
   endif()
+endif()
+
+check_symbol_exists("__builtin___clear_cache" "stdlib.h" HAVE_BUILTIN_CLEAR_CACHE)
+if (HAVE_BUILTIN_CLEAR_CACHE)
+  add_definitions(-DHAVE_BUILTIN_CLEAR_CACHE)
 endif()
 
 set(RANDOMX_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src" CACHE STRING "RandomX Include path")
