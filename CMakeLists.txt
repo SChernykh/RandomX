@@ -32,6 +32,7 @@ project(RandomX)
 
 set(randomx_sources
 src/aes_hash.cpp
+src/aes_hash.hpp
 src/allocator.cpp
 src/allocator.hpp
 src/argon2.h
@@ -71,8 +72,8 @@ src/superscalar.hpp
 src/superscalar_program.hpp
 src/virtual_machine.cpp
 src/virtual_machine.hpp
-src/virtual_memory.cpp
-src/virtual_memory.hpp
+src/virtual_memory.c
+src/virtual_memory.h
 src/vm_compiled.cpp
 src/vm_compiled.hpp
 src/vm_compiled_light.cpp
