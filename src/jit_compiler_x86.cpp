@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "superscalar.hpp"
 #include "program.hpp"
 #include "reciprocal.h"
-#include "virtual_memory.hpp"
+#include "virtual_memory.h"
 #include "cpu.hpp"
 
 namespace randomx {
@@ -268,6 +268,8 @@ namespace randomx {
 		}
 
 		code = (uint8_t*)allocMemoryPages(CodeSize);
+		if (code == nullptr)
+			throw std::runtime_error("allocMemoryPages");
 		memcpy(code, codePrologue, prologueSize);
 		memcpy(code + epilogueOffset, codeEpilogue, epilogueSize);
 	}
