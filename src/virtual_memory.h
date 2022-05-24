@@ -42,6 +42,7 @@ void setPagesRX(void*, size_t);
 void setPagesRWX(void*, size_t);
 void* allocLargePagesMemory(size_t);
 void freePagedMemory(void*, size_t);
+void flushInstructionCache(void* begin, void* end);
 
 #ifdef __cplusplus
 }

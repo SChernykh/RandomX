@@ -31,6 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #else
 #define _GNU_SOURCE	1	/* needed for MAP_ANONYMOUS on older platforms */
 #ifdef __APPLE__
+#include <libkern/OSCacheControl.h>
 #include <mach/vm_statistics.h>
 #include <TargetConditionals.h>
 #include <AvailabilityMacros.h>
@@ -233,5 +234,18 @@ void freePagedMemory(void* ptr, size_t bytes) {
 	VirtualFree(ptr, 0, MEM_RELEASE);
 #else
 	munmap(ptr, bytes);
+#endif
+}
+
+void flushInstructionCache(void* begin, void* end)
+{
+	const size_t size = (size_t)(((char*)end) - ((char*)begin));
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+	FlushInstructionCache(GetCurrentProcess(), begin, size);
+#elif defined(__APPLE__)
+	sys_icache_invalidate(begin, size);
+#elif defined(__GNUC__) || defined(HAVE_BUILTIN_CLEAR_CACHE)
+	__builtin___clear_cache((char*)begin, (char*)end);
 #endif
 }
