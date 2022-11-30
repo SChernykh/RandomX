@@ -190,6 +190,7 @@ void setPagesRX(void* ptr, size_t bytes) {
 	&& MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0
 	if (__builtin_available(macOS 11.0, *)) {
 		pthread_jit_write_protect_np(1);
+		sys_icache_invalidate(ptr, bytes);
 	} else {
 		pageProtect(ptr, bytes, PAGE_EXECUTE_READ, &errfunc);
 	}
@@ -246,6 +247,11 @@ void flushInstructionCache(void* begin, void* end)
 #if defined(_WIN32) || defined(__CYGWIN__)
 	FlushInstructionCache(GetCurrentProcess(), begin, size);
 #elif defined(__APPLE__)
+#if defined(USE_PTHREAD_JIT_WP) && defined(MAC_OS_VERSION_11_0) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0
+	if (__builtin_available(macOS 11.0, *)) {
+		// sys_icache_invalidate() will be called after pthread_jit_write_protect_np(1) in setPagesRX()
+	} else
+#endif
 	sys_icache_invalidate(begin, size);
 #elif defined(__GNUC__) || defined(HAVE_BUILTIN_CLEAR_CACHE)
 	__builtin___clear_cache((char*)begin, (char*)end);
