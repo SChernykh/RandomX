@@ -73,7 +73,7 @@ void hashAes1Rx4(const void *input, size_t inputSize, void *hash) {
 	state3 = rx_set_int_vec_i128(AES_HASH_1R_STATE3);
 
 	//process 64 bytes at a time in 4 lanes
-	while (inptr < inputEnd) {
+	while (inptr != inputEnd) {
 		in0 = rx_load_vec_i128((rx_vec_i128*)inptr + 0);
 		in1 = rx_load_vec_i128((rx_vec_i128*)inptr + 1);
 		in2 = rx_load_vec_i128((rx_vec_i128*)inptr + 2);
@@ -148,7 +148,7 @@ void fillAes1Rx4(void *state, size_t outputSize, void *buffer) {
 	state2 = rx_load_vec_i128((rx_vec_i128*)state + 2);
 	state3 = rx_load_vec_i128((rx_vec_i128*)state + 3);
 
-	while (outptr < outputEnd) {
+	while (outptr != outputEnd) {
 		state0 = aesdec<softAes>(state0, key0);
 		state1 = aesenc<softAes>(state1, key1);
 		state2 = aesdec<softAes>(state2, key2);
@@ -207,7 +207,7 @@ void fillAes4Rx4(void *state, size_t outputSize, void *buffer) {
 	state2 = rx_load_vec_i128((rx_vec_i128*)state + 2);
 	state3 = rx_load_vec_i128((rx_vec_i128*)state + 3);
 
-	while (outptr < outputEnd) {
+	while (outptr != outputEnd) {
 		state0 = aesdec<softAes>(state0, key0);
 		state1 = aesenc<softAes>(state1, key0);
 		state2 = aesdec<softAes>(state2, key4);
