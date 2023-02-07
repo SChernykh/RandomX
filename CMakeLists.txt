@@ -164,8 +164,10 @@ if(ARCH_ID STREQUAL "x86_64" OR ARCH_ID STREQUAL "x86-64" OR ARCH_ID STREQUAL "a
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/vcxproj)
   else()
     add_flag("-Os")
-    add_flag("-flto")
-    add_flag("-fuse-linker-plugin")
+    if (WITH_LTO)
+      add_flag("-flto")
+      add_flag("-fuse-linker-plugin")
+    endif()
 
     list(APPEND randomx_sources src/jit_compiler_x86_static.S)
 
