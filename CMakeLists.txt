@@ -41,8 +41,6 @@ src/argon2_core.c
 src/argon2_core.h
 src/argon2_ref.c
 src/argon2_ssse3.c
-src/assembly_generator_x86.cpp
-src/assembly_generator_x86.hpp
 src/blake2_generator.cpp
 src/blake2_generator.hpp
 src/bytecode_machine.cpp
