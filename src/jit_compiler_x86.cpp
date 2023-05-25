@@ -238,14 +238,8 @@ namespace randomx {
 		{0x0F, 0x1F, 0x44, 0x00, 0x00, 0x2E, 0x2E, 0x2E, 0x2E, 0x2E, 0x2E, 0x2E, 0x2E},
 	};
 
-	bool JitCompilerX86::BranchesWithin32B = false;
-
-	size_t JitCompilerX86::getCodeSize() {
-		return CodeSize;
-	}
-
-	JitCompilerX86::JitCompilerX86() {
-		// CPU-specific tweaks
+	// CPU-specific tweaks
+	bool JitCompilerX86::BranchesWithin32B = []() {
 		Cpu cpu;
 		if (strcmp(cpu.manufacturer(), "GenuineIntel") == 0) {
 			Cpu::ProcessorInfo info = cpu.processorInfo();
@@ -256,8 +250,7 @@ namespace randomx {
 				const uint32_t stepping = info.stepping;
 
 				// Affected CPU models and stepping numbers are taken from https://www.intel.com/content/dam/support/us/en/documents/processors/mitigations-jump-conditional-code-erratum.pdf
-				BranchesWithin32B =
-					((model == 0x4E) && (stepping == 0x3)) ||
+				return	((model == 0x4E) && (stepping == 0x3)) ||
 					((model == 0x55) && (stepping == 0x4)) ||
 					((model == 0x5E) && (stepping == 0x3)) ||
 					((model == 0x8E) && (stepping >= 0x9) && (stepping <= 0xC)) ||
@@ -266,7 +259,14 @@ namespace randomx {
 					((model == 0xAE) && (stepping == 0xA));
 			}
 		}
+		return false;
+	}();
 
+	size_t JitCompilerX86::getCodeSize() {
+		return CodeSize;
+	}
+
+	JitCompilerX86::JitCompilerX86() {
 		code = (uint8_t*)allocMemoryPages(CodeSize);
 		if (code == nullptr)
 			throw std::runtime_error("allocMemoryPages");
