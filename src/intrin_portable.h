@@ -708,8 +708,8 @@ FORCE_INLINE void rx_store_vec_i128(rx_vec_i128 *_P, rx_vec_i128 _B) {
 
 FORCE_INLINE rx_vec_f128 rx_cvt_packed_int_vec_f128(const void* addr) {
 	rx_vec_f128 x;
-	x.lo = (double)unsigned32ToSigned2sCompl(load32((uint8_t*)addr + 0));
-	x.hi = (double)unsigned32ToSigned2sCompl(load32((uint8_t*)addr + 4));
+	x.lo = (double)unsigned32ToSigned2sCompl(load32((const uint8_t*)addr + 0));
+	x.hi = (double)unsigned32ToSigned2sCompl(load32((const uint8_t*)addr + 4));
 	return x;
 }
 
