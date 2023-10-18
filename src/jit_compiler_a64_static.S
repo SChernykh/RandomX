@@ -33,6 +33,7 @@
 
 	.arch armv8-a
 	.text
+	.global DECL(randomx_clear_cache)
 	.global DECL(randomx_program_aarch64)
 	.global DECL(randomx_program_aarch64_main_loop)
 	.global DECL(randomx_program_aarch64_vm_instructions)
@@ -51,6 +52,60 @@
 	.global DECL(randomx_calc_dataset_item_aarch64_mix)
 	.global DECL(randomx_calc_dataset_item_aarch64_store_result)
 	.global DECL(randomx_calc_dataset_item_aarch64_end)
+
+	.balign 4
+DECL(randomx_clear_cache):
+	# x0 = begin
+	# x1 = end
+
+	# Range check
+	cmp	x0, x1
+	bhs	randomx_clear_cache_exit
+
+	# Read "Cache Type Register, EL0"
+	# https://developer.arm.com/documentation/ddi0488/h/system-control/aarch64-register-descriptions/cache-type-register--el0
+	#mrs	x4, ctr_el0
+
+	# [19:16] DminLine
+	# Log2 of the number of words in the smallest cache line of all the data and unified caches that the processor controls
+	#lsr	x2, x4, 16
+	#and	x2, x2, 15
+	#mov	x3, 4
+	#lsl	x3, x3, x2
+
+	# Hardcode 64-byte cache line size for now
+	mov	x3, 64
+
+	# Invalidate all data cache lines between x0 and x1
+	mov	x2, x0
+randomx_dcache_invalidate_loop:
+	dc	cvau, x2
+	add	x2, x2, x3
+	cmp	x2, x1
+	blo	randomx_clear_cache_loop
+
+	# Data Synchronization Barrier
+	dsb	ish
+
+	# [3:0] IminLine
+	# Log2 of the number of words in the smallest cache line of all the Instruction Caches that the processor controls
+	#and	x2, x4, 15
+	#mov	x3, 4
+	#lsl	x3, x3, x2
+
+	# Invalidate all instruction cache lines between x0 and x1
+	mov	x2, x0
+randomx_clear_cache_loop:
+	ic	ivau, x2
+	add	x2, x2, x3
+	cmp	x2, x1
+	blo	randomx_clear_cache_loop
+
+	# Instruction Synchronization Barrier
+	isb	sy
+	
+randomx_clear_cache_exit:
+	ret
 
 #include "configuration.h"
 
@@ -106,7 +161,6 @@
 # v30 -> E 'or' mask  = 0x3*00000000******3*00000000******
 # v31 -> scale mask   = 0x81f000000000000081f0000000000000
 
-	.balign 4
 DECL(randomx_program_aarch64):
 	# Save callee-saved registers
 	sub	sp, sp, 192
