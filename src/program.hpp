@@ -46,10 +46,6 @@ namespace randomx {
 		Instruction& operator()(int pc) {
 			return programBuffer[pc];
 		}
-		friend std::ostream& operator<<(std::ostream& os, const Program& p) {
-			p.print(os);
-			return os;
-		}
 		uint64_t getEntropy(int i) {
 			return load64(&entropyBuffer[i]);
 		}
@@ -57,12 +53,6 @@ namespace randomx {
 			return RANDOMX_PROGRAM_SIZE;
 		}
 	private:
-		void print(std::ostream& os) const {
-			for (int i = 0; i < RANDOMX_PROGRAM_SIZE; ++i) {
-				auto instr = programBuffer[i];
-				os << instr;
-			}
-		}
 		uint64_t entropyBuffer[16];
 		Instruction programBuffer[RANDOMX_PROGRAM_SIZE];
 	};

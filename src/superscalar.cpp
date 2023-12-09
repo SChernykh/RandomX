@@ -61,17 +61,14 @@ namespace randomx {
 	//Macro-op can consist of 1 or 2 uOPs.
 	class MacroOp {
 	public:
-		MacroOp(const char* name, int size)
-			: name_(name), size_(size), latency_(0), uop1_(ExecutionPort::Null), uop2_(ExecutionPort::Null) {}
-		MacroOp(const char* name, int size, int latency, ExecutionPort::type uop)
-			: name_(name), size_(size), latency_(latency), uop1_(uop), uop2_(ExecutionPort::Null) {}
-		MacroOp(const char* name, int size, int latency, ExecutionPort::type uop1, ExecutionPort::type uop2)
-			: name_(name), size_(size), latency_(latency), uop1_(uop1), uop2_(uop2) {}
+		explicit MacroOp(int size)
+			: size_(size), latency_(0), uop1_(ExecutionPort::Null), uop2_(ExecutionPort::Null) {}
+		MacroOp(int size, int latency, ExecutionPort::type uop)
+			: size_(size), latency_(latency), uop1_(uop), uop2_(ExecutionPort::Null) {}
+		MacroOp(int size, int latency, ExecutionPort::type uop1, ExecutionPort::type uop2)
+			: size_(size), latency_(latency), uop1_(uop1), uop2_(uop2) {}
 		MacroOp(const MacroOp& parent, bool dependent)
-			: name_(parent.name_), size_(parent.size_), latency_(parent.latency_), uop1_(parent.uop1_), uop2_(parent.uop2_), dependent_(dependent) {}
-		const char* getName() const {
-			return name_;
-		}
+			: size_(parent.size_), latency_(parent.latency_), uop1_(parent.uop1_), uop2_(parent.uop2_), dependent_(dependent) {}
 		int getSize() const {
 			return size_;
 		}
@@ -111,7 +108,6 @@ namespace randomx {
 		static const MacroOp Cmp_ri;
 		static const MacroOp Setcc_r;
 	private:
-		const char* name_;
 		int size_;
 		int latency_;
 		ExecutionPort::type uop1_;
@@ -120,31 +116,31 @@ namespace randomx {
 	};
 
 	//Size: 3 bytes
-	const MacroOp MacroOp::Add_rr = MacroOp("add r,r", 3, 1, ExecutionPort::P015);
-	const MacroOp MacroOp::Sub_rr = MacroOp("sub r,r", 3, 1, ExecutionPort::P015);
-	const MacroOp MacroOp::Xor_rr = MacroOp("xor r,r", 3, 1, ExecutionPort::P015);
-	const MacroOp MacroOp::Imul_r = MacroOp("imul r", 3, 4, ExecutionPort::P1, ExecutionPort::P5);
-	const MacroOp MacroOp::Mul_r = MacroOp("mul r", 3, 4, ExecutionPort::P1, ExecutionPort::P5);
-	const MacroOp MacroOp::Mov_rr = MacroOp("mov r,r", 3);
+	const MacroOp MacroOp::Add_rr = MacroOp(3, 1, ExecutionPort::P015);
+	const MacroOp MacroOp::Sub_rr = MacroOp(3, 1, ExecutionPort::P015);
+	const MacroOp MacroOp::Xor_rr = MacroOp(3, 1, ExecutionPort::P015);
+	const MacroOp MacroOp::Imul_r = MacroOp(3, 4, ExecutionPort::P1, ExecutionPort::P5);
+	const MacroOp MacroOp::Mul_r = MacroOp(3, 4, ExecutionPort::P1, ExecutionPort::P5);
+	const MacroOp MacroOp::Mov_rr = MacroOp(3);
 
 	//Size: 4 bytes
-	const MacroOp MacroOp::Lea_sib = MacroOp("lea r,r+r*s", 4, 1, ExecutionPort::P01);
-	const MacroOp MacroOp::Imul_rr = MacroOp("imul r,r", 4, 3, ExecutionPort::P1);
-	const MacroOp MacroOp::Ror_ri = MacroOp("ror r,i", 4, 1, ExecutionPort::P05);
+	const MacroOp MacroOp::Lea_sib = MacroOp(4, 1, ExecutionPort::P01);
+	const MacroOp MacroOp::Imul_rr = MacroOp(4, 3, ExecutionPort::P1);
+	const MacroOp MacroOp::Ror_ri = MacroOp(4, 1, ExecutionPort::P05);
 
 	//Size: 7 bytes (can be optionally padded with nop to 8 or 9 bytes)
-	const MacroOp MacroOp::Add_ri = MacroOp("add r,i", 7, 1, ExecutionPort::P015);
-	const MacroOp MacroOp::Xor_ri = MacroOp("xor r,i", 7, 1, ExecutionPort::P015);
+	const MacroOp MacroOp::Add_ri = MacroOp(7, 1, ExecutionPort::P015);
+	const MacroOp MacroOp::Xor_ri = MacroOp(7, 1, ExecutionPort::P015);
 
 	//Size: 10 bytes
-	const MacroOp MacroOp::Mov_ri64 = MacroOp("mov rax,i64", 10, 1, ExecutionPort::P015);
+	const MacroOp MacroOp::Mov_ri64 = MacroOp(10, 1, ExecutionPort::P015);
 
 	//Unused:
-	const MacroOp MacroOp::Ror_rcl = MacroOp("ror r,cl", 3, 1, ExecutionPort::P0, ExecutionPort::P5);
-	const MacroOp MacroOp::Xor_self = MacroOp("xor rcx,rcx", 3);
-	const MacroOp MacroOp::Cmp_ri = MacroOp("cmp r,i", 7, 1, ExecutionPort::P015);
-	const MacroOp MacroOp::Setcc_r = MacroOp("setcc cl", 3, 1, ExecutionPort::P05);
-	const MacroOp MacroOp::TestJz_fused = MacroOp("testjz r,i", 13, 0, ExecutionPort::P5);
+	const MacroOp MacroOp::Ror_rcl = MacroOp(3, 1, ExecutionPort::P0, ExecutionPort::P5);
+	const MacroOp MacroOp::Xor_self = MacroOp(3);
+	const MacroOp MacroOp::Cmp_ri = MacroOp(7, 1, ExecutionPort::P015);
+	const MacroOp MacroOp::Setcc_r = MacroOp(3, 1, ExecutionPort::P05);
+	const MacroOp MacroOp::TestJz_fused = MacroOp(13, 0, ExecutionPort::P5);
 
 	const MacroOp IMULH_R_ops_array[] = { MacroOp::Mov_rr, MacroOp::Mul_r, MacroOp::Mov_rr };
 	const MacroOp ISMULH_R_ops_array[] = { MacroOp::Mov_rr, MacroOp::Imul_r, MacroOp::Mov_rr };
@@ -152,9 +148,6 @@ namespace randomx {
 
 	class SuperscalarInstructionInfo {
 	public:
-		const char* getName() const {
-			return name_;
-		}
 		int getSize() const {
 			return ops_.size();
 		}
@@ -195,7 +188,6 @@ namespace randomx {
 		static const SuperscalarInstructionInfo IMUL_RCP;
 		static const SuperscalarInstructionInfo NOP;
 	private:
-		const char* name_;
 		SuperscalarInstructionType type_;
 		std::vector<MacroOp> ops_;
 		int latency_;
@@ -203,15 +195,15 @@ namespace randomx {
 		int dstOp_ = 0;
 		int srcOp_;
 
-		SuperscalarInstructionInfo(const char* name)
-			: name_(name), type_(SuperscalarInstructionType::INVALID), latency_(0) {}
-		SuperscalarInstructionInfo(const char* name, SuperscalarInstructionType type, const MacroOp& op, int srcOp)
-			: name_(name), type_(type), latency_(op.getLatency()), srcOp_(srcOp) {
+		SuperscalarInstructionInfo()
+			: type_(SuperscalarInstructionType::INVALID), latency_(0) {}
+		SuperscalarInstructionInfo(SuperscalarInstructionType type, const MacroOp& op, int srcOp)
+			: type_(type), latency_(op.getLatency()), srcOp_(srcOp) {
 			ops_.push_back(MacroOp(op));
 		}
 		template <size_t N>
-		SuperscalarInstructionInfo(const char* name, SuperscalarInstructionType type, const MacroOp(&arr)[N], int resultOp, int dstOp, int srcOp)
-			: name_(name), type_(type), latency_(0), resultOp_(resultOp), dstOp_(dstOp), srcOp_(srcOp) {
+		SuperscalarInstructionInfo(SuperscalarInstructionType type, const MacroOp(&arr)[N], int resultOp, int dstOp, int srcOp)
+			: type_(type), latency_(0), resultOp_(resultOp), dstOp_(dstOp), srcOp_(srcOp) {
 			for (unsigned i = 0; i < N; ++i) {
 				ops_.push_back(MacroOp(arr[i]));
 				latency_ += ops_.back().getLatency();
@@ -220,24 +212,24 @@ namespace randomx {
 		}
 	};
 
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::ISUB_R = SuperscalarInstructionInfo("ISUB_R", SuperscalarInstructionType::ISUB_R, MacroOp::Sub_rr, 0);
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IXOR_R = SuperscalarInstructionInfo("IXOR_R", SuperscalarInstructionType::IXOR_R, MacroOp::Xor_rr, 0);
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IADD_RS = SuperscalarInstructionInfo("IADD_RS", SuperscalarInstructionType::IADD_RS, MacroOp::Lea_sib, 0);
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IMUL_R = SuperscalarInstructionInfo("IMUL_R", SuperscalarInstructionType::IMUL_R, MacroOp::Imul_rr, 0);
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IROR_C = SuperscalarInstructionInfo("IROR_C", SuperscalarInstructionType::IROR_C, MacroOp::Ror_ri, -1);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::ISUB_R = SuperscalarInstructionInfo(SuperscalarInstructionType::ISUB_R, MacroOp::Sub_rr, 0);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IXOR_R = SuperscalarInstructionInfo(SuperscalarInstructionType::IXOR_R, MacroOp::Xor_rr, 0);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IADD_RS = SuperscalarInstructionInfo(SuperscalarInstructionType::IADD_RS, MacroOp::Lea_sib, 0);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IMUL_R = SuperscalarInstructionInfo(SuperscalarInstructionType::IMUL_R, MacroOp::Imul_rr, 0);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IROR_C = SuperscalarInstructionInfo(SuperscalarInstructionType::IROR_C, MacroOp::Ror_ri, -1);
 
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IADD_C7 = SuperscalarInstructionInfo("IADD_C7", SuperscalarInstructionType::IADD_C7, MacroOp::Add_ri, -1);
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IXOR_C7 = SuperscalarInstructionInfo("IXOR_C7", SuperscalarInstructionType::IXOR_C7, MacroOp::Xor_ri, -1);
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IADD_C8 = SuperscalarInstructionInfo("IADD_C8", SuperscalarInstructionType::IADD_C8, MacroOp::Add_ri, -1);
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IXOR_C8 = SuperscalarInstructionInfo("IXOR_C8", SuperscalarInstructionType::IXOR_C8, MacroOp::Xor_ri, -1);
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IADD_C9 = SuperscalarInstructionInfo("IADD_C9", SuperscalarInstructionType::IADD_C9, MacroOp::Add_ri, -1);
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IXOR_C9 = SuperscalarInstructionInfo("IXOR_C9", SuperscalarInstructionType::IXOR_C9, MacroOp::Xor_ri, -1);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IADD_C7 = SuperscalarInstructionInfo(SuperscalarInstructionType::IADD_C7, MacroOp::Add_ri, -1);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IXOR_C7 = SuperscalarInstructionInfo(SuperscalarInstructionType::IXOR_C7, MacroOp::Xor_ri, -1);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IADD_C8 = SuperscalarInstructionInfo(SuperscalarInstructionType::IADD_C8, MacroOp::Add_ri, -1);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IXOR_C8 = SuperscalarInstructionInfo(SuperscalarInstructionType::IXOR_C8, MacroOp::Xor_ri, -1);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IADD_C9 = SuperscalarInstructionInfo(SuperscalarInstructionType::IADD_C9, MacroOp::Add_ri, -1);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IXOR_C9 = SuperscalarInstructionInfo(SuperscalarInstructionType::IXOR_C9, MacroOp::Xor_ri, -1);
 
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IMULH_R = SuperscalarInstructionInfo("IMULH_R", SuperscalarInstructionType::IMULH_R, IMULH_R_ops_array, 1, 0, 1);
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::ISMULH_R = SuperscalarInstructionInfo("ISMULH_R", SuperscalarInstructionType::ISMULH_R, ISMULH_R_ops_array, 1, 0, 1);
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IMUL_RCP = SuperscalarInstructionInfo("IMUL_RCP", SuperscalarInstructionType::IMUL_RCP, IMUL_RCP_ops_array, 1, 1, -1);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IMULH_R = SuperscalarInstructionInfo(SuperscalarInstructionType::IMULH_R, IMULH_R_ops_array, 1, 0, 1);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::ISMULH_R = SuperscalarInstructionInfo(SuperscalarInstructionType::ISMULH_R, ISMULH_R_ops_array, 1, 0, 1);
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::IMUL_RCP = SuperscalarInstructionInfo(SuperscalarInstructionType::IMUL_RCP, IMUL_RCP_ops_array, 1, 1, -1);
 	
-	const SuperscalarInstructionInfo SuperscalarInstructionInfo::NOP = SuperscalarInstructionInfo("NOP");
+	const SuperscalarInstructionInfo SuperscalarInstructionInfo::NOP = SuperscalarInstructionInfo();
 
 	//these are some of the options how to split a 16-byte window into 3 or 4 x86 instructions.
 	//RandomX uses instructions with a native size of 3 (sub, xor, mul, mov), 4 (lea, mul), 7 (xor, add immediate) or 10 bytes (mov 64-bit immediate).
@@ -253,8 +245,8 @@ namespace randomx {
 	public:
 		static const DecoderBuffer Default;
 		template <size_t N>
-		DecoderBuffer(const char* name, int index, const int(&arr)[N])
-			: name_(name), index_(index), counts_(arr), opsCount_(N) {}
+		DecoderBuffer(int index, const int(&arr)[N])
+			: index_(index), counts_(arr), opsCount_(N) {}
 		const int* getCounts() const {
 			return counts_;
 		}
@@ -263,9 +255,6 @@ namespace randomx {
 		}
 		int getIndex() const {
 			return index_;
-		}
-		const char* getName() const {
-			return name_;
 		}
 		const DecoderBuffer* fetchNext(SuperscalarInstructionType instrType, int cycle, int mulCount, Blake2Generator& gen) const {
 			//If the current RandomX instruction is "IMULH", the next fetch configuration must be 3-3-10
@@ -287,7 +276,6 @@ namespace randomx {
 			return fetchNextDefault(gen);
 		}
 	private:
-		const char* name_;
 		int index_;
 		const int* counts_;
 		int opsCount_;
@@ -304,12 +292,12 @@ namespace randomx {
 		}
 	};
 
-	const DecoderBuffer DecoderBuffer::decodeBuffer484 = DecoderBuffer("4,8,4", 0, buffer0);
-	const DecoderBuffer DecoderBuffer::decodeBuffer7333 = DecoderBuffer("7,3,3,3", 1, buffer1);
-	const DecoderBuffer DecoderBuffer::decodeBuffer3733 = DecoderBuffer("3,7,3,3", 2, buffer2);
-	const DecoderBuffer DecoderBuffer::decodeBuffer493 = DecoderBuffer("4,9,3", 3, buffer3);
-	const DecoderBuffer DecoderBuffer::decodeBuffer4444 = DecoderBuffer("4,4,4,4", 4, buffer4);
-	const DecoderBuffer DecoderBuffer::decodeBuffer3310 = DecoderBuffer("3,3,10", 5, buffer5);
+	const DecoderBuffer DecoderBuffer::decodeBuffer484 = DecoderBuffer(0, buffer0);
+	const DecoderBuffer DecoderBuffer::decodeBuffer7333 = DecoderBuffer(1, buffer1);
+	const DecoderBuffer DecoderBuffer::decodeBuffer3733 = DecoderBuffer(2, buffer2);
+	const DecoderBuffer DecoderBuffer::decodeBuffer493 = DecoderBuffer(3, buffer3);
+	const DecoderBuffer DecoderBuffer::decodeBuffer4444 = DecoderBuffer(4, buffer4);
+	const DecoderBuffer DecoderBuffer::decodeBuffer3310 = DecoderBuffer(5, buffer5);
 
 	const DecoderBuffer* DecoderBuffer::decodeBuffers[4] = {
 			&DecoderBuffer::decodeBuffer484,
