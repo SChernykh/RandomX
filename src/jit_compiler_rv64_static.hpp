@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018-2019, tevador <tevador@gmail.com>
+Copyright (c) 2023 tevador <tevador@gmail.com>
 
 All rights reserved.
 
@@ -26,47 +26,28 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <assert.h>
-#include "reciprocal.h"
+#pragma once
 
-/*
-	Calculates rcp = 2**x / divisor for highest integer x such that rcp < 2**64.
-	divisor must not be 0 or a power of 2
-
-	Equivalent x86 assembly (divisor in rcx):
-
-	mov edx, 1
-	mov r8, rcx
-	xor eax, eax
-	bsr rcx, rcx
-	shl rdx, cl
-	div r8
-	ret
-
-*/
-uint64_t randomx_reciprocal(uint32_t divisor) {
-
-	assert(divisor != 0);
-
-	const uint64_t p2exp63 = 1ULL << 63;
-	const uint64_t q = p2exp63 / divisor;
-	const uint64_t r = p2exp63 % divisor;
-
-#ifdef __GNUC__
-	const uint32_t shift = 64 - __builtin_clzll(divisor);
-#else
-	uint32_t shift = 32;
-	for (uint32_t k = 1U << 31; (k & divisor) == 0; k >>= 1)
-		--shift;
-#endif
-
-	return (q << shift) + ((r << shift) / divisor);
+extern "C" {
+	void randomx_riscv64_literals();
+	void randomx_riscv64_literals_end();
+	void randomx_riscv64_data_init();
+	void randomx_riscv64_fix_data_call();
+	void randomx_riscv64_prologue();
+	void randomx_riscv64_loop_begin();
+	void randomx_riscv64_data_read();
+	void randomx_riscv64_data_read_light();
+	void randomx_riscv64_fix_loop_call();
+	void randomx_riscv64_spad_store();
+	void randomx_riscv64_spad_store_hardaes();
+	void randomx_riscv64_spad_store_softaes();
+	void randomx_riscv64_loop_end();
+	void randomx_riscv64_fix_continue_loop();
+	void randomx_riscv64_epilogue();
+	void randomx_riscv64_softaes();
+	void randomx_riscv64_program_end();
+	void randomx_riscv64_ssh_init();
+	void randomx_riscv64_ssh_load();
+	void randomx_riscv64_ssh_prefetch();
+	void randomx_riscv64_ssh_end();
 }
-
-#if !RANDOMX_HAVE_FAST_RECIPROCAL
-
-uint64_t randomx_reciprocal_fast(uint32_t divisor) {
-	return randomx_reciprocal(divisor);
-}
-
-#endif
