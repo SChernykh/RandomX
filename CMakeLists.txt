@@ -228,11 +228,16 @@ endif()
 check_symbol_exists("__builtin___clear_cache" "stdlib.h" HAVE_BUILTIN_CLEAR_CACHE)
 if (HAVE_BUILTIN_CLEAR_CACHE)
   add_definitions(-DHAVE_BUILTIN_CLEAR_CACHE)
+endif()
+
 # RISC-V
 if(ARCH_ID STREQUAL "riscv64")
   list(APPEND randomx_sources
     src/jit_compiler_rv64_static.S
-    src/jit_compiler_rv64.cpp)
+    src/jit_compiler_rv64.cpp
+    src/jit_compiler_rv64.hpp
+    src/jit_compiler_rv64_static.hpp
+  )
   # cheat because cmake and ccache hate each other
   set_property(SOURCE src/jit_compiler_rv64_static.S PROPERTY LANGUAGE C)
   set_property(SOURCE src/jit_compiler_rv64_static.S PROPERTY XCODE_EXPLICIT_FILE_TYPE sourcecode.asm)
