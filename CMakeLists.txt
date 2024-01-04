@@ -274,7 +274,7 @@ set(RANDOMX_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src" CACHE STRING "RandomX Incl
 add_library(randomx ${randomx_sources})
 
 set_property(TARGET randomx PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET randomx PROPERTY CXX_STANDARD 14)
+set_property(TARGET randomx PROPERTY CXX_STANDARD 17)
 set_property(TARGET randomx PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET randomx PROPERTY PUBLIC_HEADER src/randomx.h)
 
@@ -289,4 +289,5 @@ add_executable(randomx-tests
 target_link_libraries(randomx-tests
   PRIVATE randomx)
 set_property(TARGET randomx-tests PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET randomx-tests PROPERTY CXX_STANDARD 11)
+set_property(TARGET randomx-tests PROPERTY CXX_STANDARD 17)
+set_property(TARGET randomx-tests PROPERTY CXX_STANDARD_REQUIRED ON)
