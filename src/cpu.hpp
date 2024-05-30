@@ -39,6 +39,9 @@ namespace randomx {
 		bool hasSsse3() const {
 			return ssse3_;
 		}
+		bool hasBmi() const {
+			return bmi_;
+		}
 		bool hasAvx2() const {
 			return avx2_;
 		}
@@ -63,7 +66,7 @@ namespace randomx {
 		}
 
 	private:
-		bool aes_, ssse3_, avx2_;
+		bool aes_, ssse3_, bmi_, avx2_;
 		int manufacturer_string[4];
 		union
 		{

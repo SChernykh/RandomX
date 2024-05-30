@@ -26,6 +26,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4514)
+#endif
+
 #include "cpu.hpp"
 
 #if defined(_M_X64) || defined(__x86_64__)
@@ -48,7 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace randomx {
 
-	Cpu::Cpu() : aes_(false), ssse3_(false), avx2_(false) {
+	Cpu::Cpu() : aes_(false), ssse3_(false), bmi_(false), avx2_(false) {
 #ifdef HAVE_CPUID
 		int info[4];
 		cpuid(info, 0);
@@ -67,6 +71,7 @@ namespace randomx {
 		}
 		if (nIds >= 0x00000007) {
 			cpuid(info, 0x00000007);
+			bmi_ = (info[1] & (1 << 3)) != 0;
 			avx2_ = (info[1] & (1 << 5)) != 0;
 		}
 #elif defined(__aarch64__)
