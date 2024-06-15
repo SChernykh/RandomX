@@ -95,7 +95,7 @@ void randomx_vm::initialize() {
 
 namespace randomx {
 
-	alignas(16) volatile static rx_vec_i128 aesDummy;
+	alignas(16) volatile static thread_local rx_vec_i128 aesDummy;
 
 	template<class Allocator, bool softAes>
 	VmBase<Allocator, softAes>::~VmBase() {
