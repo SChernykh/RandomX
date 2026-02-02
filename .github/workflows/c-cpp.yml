@@ -2,7 +2,7 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ p2pool_v2 ]
   pull_request:
 
 jobs:

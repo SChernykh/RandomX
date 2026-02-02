@@ -32,13 +32,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "virtual_memory.h"
 #include "common.hpp"
 
-namespace randomx {
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
+
+#if __has_feature(memory_sanitizer)
+#include <sanitizer/msan_interface.h>
+#define unpoison_memory(ptr, size) __msan_unpoison(ptr, size)
+#else
+#define unpoison_memory(ptr, size)
+#endif
+
+namespace randomx{
 
 	template<size_t alignment>
 	void* AlignedAllocator<alignment>::allocMemory(size_t count) {
 		void *mem = rx_aligned_alloc(count, alignment);
 		if (mem == nullptr)
 			throw std::bad_alloc();
+		unpoison_memory(mem, count);
 		return mem;
 	}
 
@@ -53,6 +65,7 @@ namespace randomx {
 		void *mem = allocLargePagesMemory(count);
 		if (mem == nullptr)
 			throw std::bad_alloc();
+		unpoison_memory(mem, count);
 		return mem;
 	}
 

@@ -31,6 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <vector>
 #include <type_traits>
+#include <string>
 #include "common.hpp"
 #include "superscalar_program.hpp"
 #include "allocator.hpp"
@@ -64,11 +65,11 @@ static_assert(std::is_standard_layout<randomx_dataset>(), "randomx_dataset must 
 
 //the following assert fails when compiling Debug in Visual Studio (JIT mode will crash in Debug)
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && defined(_DEBUG)
-#define TO_STR(x) #x
-#define STR(x) TO_STR(x)
-#pragma message ( __FILE__ "(" STR(__LINE__) ") warning: check std::is_standard_layout<randomx_cache>() is disabled for Debug configuration. JIT mode will crash." )
-#undef STR
-#undef TO_STR
+//#define TO_STR(x) #x
+//#define STR(x) TO_STR(x)
+//#pragma message ( __FILE__ "(" STR(__LINE__) ") warning: check std::is_standard_layout<randomx_cache>() is disabled for Debug configuration. JIT mode will crash." )
+//#undef STR
+//#undef TO_STR
 #else
 static_assert(std::is_standard_layout<randomx_cache>(), "randomx_cache must be a standard-layout struct");
 #endif

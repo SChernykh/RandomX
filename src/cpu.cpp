@@ -26,6 +26,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4514 4711)
+#endif
+
 #include "cpu.hpp"
 #include <cstring>
 
@@ -36,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		#define cpuid(info, x) __cpuidex(info, x, 0)
 	#else //GCC
 		#include <cpuid.h>
-		void cpuid(int info[4], int InfoType) {
+		static void cpuid(int info[4], int InfoType) {
 			__cpuid_count(InfoType, 0, info[0], info[1], info[2], info[3]);
 		}
 	#endif
@@ -76,6 +80,7 @@ namespace randomx {
 		}
 		if (nIds >= 0x00000007) {
 			cpuid(info, 0x00000007);
+			bmi_ = (info[1] & (1 << 3)) != 0;
 			avx2_ = (info[1] & (1 << 5)) != 0;
 		}
 #elif defined(__aarch64__)

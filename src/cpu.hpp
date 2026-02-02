@@ -36,6 +36,7 @@ namespace randomx {
 
 		inline bool hasAes() const { return aes_; }
 		inline bool hasSsse3() const { return ssse3_; }
+		inline bool hasBmi() const { return bmi_; }
 		inline bool hasAvx2() const { return avx2_; }
 #ifdef __riscv
 		inline bool hasRVV() const { return rvv_; }
@@ -45,6 +46,7 @@ namespace randomx {
 	private:
 		bool aes_ = false;
 		bool ssse3_ = false;
+		bool bmi_ = false;
 		bool avx2_ = false;
 #ifdef __riscv
 		bool rvv_ = false;

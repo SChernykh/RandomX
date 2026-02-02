@@ -52,9 +52,15 @@ typedef enum {
   RANDOMX_FLAG_V2 = 128,
 } randomx_flags;
 
+#if defined(__cplusplus)
+struct randomx_dataset;
+struct randomx_cache;
+class randomx_vm;
+#else
 typedef struct randomx_dataset randomx_dataset;
 typedef struct randomx_cache randomx_cache;
 typedef struct randomx_vm randomx_vm;
+#endif
 
 
 #if defined(__cplusplus)
