@@ -263,6 +263,6 @@ DECL(randomx_reciprocal_fast):
 #endif
 	#include "asm/randomx_reciprocal.inc"
 
-#if defined(__linux__) && defined(__ELF__)
+#if defined(__ELF__)
 .section .note.GNU-stack,"",%progbits
 #endif
