@@ -379,6 +379,8 @@ set(RANDOMX_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src" CACHE STRING "RandomX Incl
 
 add_library(randomx ${randomx_sources})
 
+target_include_directories(randomx PUBLIC ${RANDOMX_INCLUDE})
+
 set_property(TARGET randomx PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET randomx PROPERTY CXX_STANDARD 17)
 set_property(TARGET randomx PROPERTY CXX_STANDARD_REQUIRED ON)
