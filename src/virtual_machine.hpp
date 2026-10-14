@@ -58,6 +58,9 @@ public:
 	const uint8_t* getMemory() const {
 		return mem.memory;
 	}
+	const randomx_cache* getCache() const {
+		return cachePtr;
+	}
 	randomx_flags getFlags() const {
 		return vmFlags;
 	}
